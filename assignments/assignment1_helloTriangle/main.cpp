@@ -8,35 +8,56 @@
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
-float triangleVerts[3 * 3] = {
-	-0.5f, -0.5f, 0.0f,	//Bottom left
-	 0.5f, -0.5f, 0.0f,	//Bottom right
-	 0.0f,  0.5f, 0.0f,	//Top center
+constexpr int TRIANGLE_VERT_COUNT = 3;
+constexpr int TRIANGLE_VERT_DATA_STRIDE = 7;
+
+constexpr float TRIANGLE_VERT_DATA[TRIANGLE_VERT_COUNT * TRIANGLE_VERT_DATA_STRIDE] = {
+	//X     Y     Z			R     G     B     A
+	-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 0.0f, 1.f,	//Bottom left
+	 0.5f, -0.5f, 0.0f,		0.0f, 1.0f, 0.0f, 1.f,	//Bottom right
+	 0.0f,  0.5f, 0.0f,		0.0f, 0.0f, 1.0f, 1.f,	//Top center
 };
 
-const char vertShaderSource[] = R"(
+constexpr char SHADER_TIME_UNIFORM_NAME[] = "_Time";
+
+constexpr char VERT_SHADER_SOURCE[] = R"(
 #version 450
+
 layout(location = 0) in vec3 vPos;
-void main() {
-	gl_Position = vec4(vPos,1.0);
+layout(location = 1) in vec4 vColor;
+uniform float _Time;
+
+out vec4 Color;
+
+void main() 
+{
+	Color = vColor;
+	vec3 offset = vec3(0, sin(vPos.x + _Time), 0) * 0.5;
+	gl_Position = vec4(vPos + offset, 1.0);
 }
 )";
 
-const char fragShaderSource[] = R"(
+constexpr char FRAG_SHADER_SOURCE[] = R"(
 #version 450
+
+in vec4 Color;
+uniform float _Time;
+
 out vec4 FragColor;
-void main() {
-	FragColor = vec4(1.0);
+
+void main() 
+{
+	FragColor = Color * abs(sin(_Time));
 }
 )";
 
-GLuint createVAO(float* vertexData, int numVertices)
+GLuint createVAO(const float* vertexData, const int numVertices)
 {
 	//Setup vertex buffer object
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * numVertices, vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * TRIANGLE_VERT_DATA_STRIDE * numVertices, vertexData, GL_STATIC_DRAW);
 
 	//Setup vertex array object
 	GLuint vao;
@@ -44,8 +65,16 @@ GLuint createVAO(float* vertexData, int numVertices)
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, nullptr);
-	glEnableVertexAttribArray(0);
+	//Position attribute
+	constexpr int positionAttributeIndex = 0;
+	glVertexAttribPointer(positionAttributeIndex, 3, GL_FLOAT, GL_FALSE, sizeof(float) * TRIANGLE_VERT_DATA_STRIDE, nullptr);
+	glEnableVertexAttribArray(positionAttributeIndex);
+
+	//Vertex color attribute
+	constexpr int vertexColorAttributeIndex = 1;
+	auto vertexColorAttributeByteOffset = reinterpret_cast<const void*>(sizeof(float) * 3);
+	glVertexAttribPointer(vertexColorAttributeIndex, 4, GL_FLOAT, GL_FALSE, sizeof(float) * TRIANGLE_VERT_DATA_STRIDE, vertexColorAttributeByteOffset);
+	glEnableVertexAttribArray(vertexColorAttributeIndex);
 
 	return vao;
 }
@@ -118,13 +147,18 @@ int main() {
 		return 1;
 	}
 
-	GLuint shaderProgram = createShaderProgram(vertShaderSource, fragShaderSource);
-	GLuint triangleVAO = createVAO(triangleVerts, 3);
+	GLuint shaderProgram = createShaderProgram(VERT_SHADER_SOURCE, FRAG_SHADER_SOURCE);
+	GLuint triangleVAO = createVAO(TRIANGLE_VERT_DATA, TRIANGLE_VERT_COUNT);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		GLfloat time = glfwGetTime();
+		GLint timeUniformLocation = glGetUniformLocation(shaderProgram, SHADER_TIME_UNIFORM_NAME);
+		glUniform1f(timeUniformLocation, time);
+
 		glUseProgram(shaderProgram);
 		glBindVertexArray(triangleVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
