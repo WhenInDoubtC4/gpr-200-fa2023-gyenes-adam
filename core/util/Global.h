@@ -1,0 +1,1 @@
+constexpr int INFO_LOG_SIZE = 512;

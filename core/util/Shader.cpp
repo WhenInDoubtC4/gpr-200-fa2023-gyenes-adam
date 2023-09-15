@@ -1,5 +1,31 @@
 #include "Shader.h"
 
+Shader::Shader(const char* vertFilepath, const char* fragFilepath)
+{
+	std::string vertSource = loadSourceFromFile(vertFilepath);
+	std::string fragSource = loadSourceFromFile(fragFilepath);
+
+	GLuint vertShader = createShader(GL_VERTEX_SHADER, vertSource.c_str());
+	GLuint fragShader = createShader(GL_FRAGMENT_SHADER, fragSource.c_str());
+
+	_shaderProgram = glCreateProgram();
+	glAttachShader(_shaderProgram, vertShader);
+	glAttachShader(_shaderProgram, fragShader);
+
+	GLint status;
+	glLinkProgram(_shaderProgram);
+	glGetProgramiv(_shaderProgram, GL_LINK_STATUS, &status);
+	if (!status)
+	{
+		char log[INFO_LOG_SIZE];
+		glGetProgramInfoLog(_shaderProgram, INFO_LOG_SIZE, nullptr, log);
+		std::cout << "Failed to link shader program: " << log << "\n";
+	}
+
+	glDeleteShader(vertShader);
+	glDeleteShader(fragShader);
+}
+
 std::string Shader::loadSourceFromFile(const char* filepath)
 {
 	std::ifstream file(filepath);
@@ -10,4 +36,53 @@ std::string Shader::loadSourceFromFile(const char* filepath)
 
 	file.close();
 	return source;
+}
+
+void Shader::setInt(const char* name, int value)
+{
+	glUniform1i(glGetUniformLocation(_shaderProgram, name), value);
+}
+
+void Shader::setFloat(const char* name, float value)
+{
+	glUniform1f(glGetUniformLocation(_shaderProgram, name), value);
+}
+
+void Shader::setVec2(const char* name, float x, float y)
+{
+	glUniform2f(glGetUniformLocation(_shaderProgram, name), x, y);
+}
+
+void Shader::setVec3(const char* name, float x, float y, float z)
+{
+	glUniform3f(glGetUniformLocation(_shaderProgram, name), x, y, z);
+}
+
+void Shader::setVec4(const char* name, float x, float y, float z, float w)
+{
+	glUniform4f(glGetUniformLocation(_shaderProgram, name), x, y, z, w);
+}
+
+void Shader::exec()
+{
+	glUseProgram(_shaderProgram);
+}
+
+GLuint Shader::createShader(GLenum type, const char* source)
+{
+	GLuint shader = glCreateShader(type);
+
+	glShaderSource(shader, 1, &source, nullptr);
+
+	GLint status;
+	glCompileShader(shader);
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+	if (!status)
+	{
+		char log[INFO_LOG_SIZE];
+		glGetShaderInfoLog(shader, INFO_LOG_SIZE, nullptr, log);
+		std::cout << "Error compiling shader: " << log << "\n";
+	}
+
+	return shader;
 }
