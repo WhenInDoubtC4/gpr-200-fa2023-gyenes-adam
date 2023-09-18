@@ -8,19 +8,26 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-unsigned int createShader(GLenum shaderType, const char* sourceCode);
-unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
-unsigned int createVAO(float* vertexData, int numVertices);
+GLuint createVAO(const float* vertexData, int numVertices, const unsigned int* indiciesData, int numIndicies);
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 const int SCREEN_WIDTH = 1080;
 const int SCREEN_HEIGHT = 720;
 
-float vertices[9] = {
-	//x   //y  //z   
-	-0.5, -0.5, 0.0, 
-	 0.5, -0.5, 0.0,
-	 0.0,  0.5, 0.0 
+constexpr int VERT_DATA_STRIDE = 3;
+constexpr int VERT_COUNT = 6;
+
+constexpr float VERT_DATA[VERT_COUNT * VERT_DATA_STRIDE] = {
+	//X    //Y    //Z
+	-0.8f, -0.8f, 0.f, //Bottom left
+	0.8f, -0.8f, 0.f, //Bottom right
+	0.8f, 0.8f, 0.f, //Top right
+	-0.8f, 0.8f, 0.f //Top left
+};
+
+constexpr unsigned int VERT_INDICIES[VERT_COUNT] = {
+	0 /*Bottom left*/, 1 /*Bottom right*/, 2 /*Top right*/,
+	2 /*Top right*/, 3 /*Top left*/, 0 /*Bottom left*/,
 };
 
 constexpr char VERT_SHADER_FILEPATH[] = "assets\\vertexShader.vert";
@@ -57,7 +64,9 @@ int main() {
 	ImGui_ImplOpenGL3_Init();
 
 	Shader shader(VERT_SHADER_FILEPATH, FRAG_SHADER_FILEPATH);
-	unsigned int vao = createVAO(vertices, 3);
+	GLuint vao = createVAO(VERT_DATA, VERT_COUNT, VERT_INDICIES, VERT_COUNT);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	shader.exec();
 	glBindVertexArray(vao);
@@ -71,7 +80,8 @@ int main() {
 		shader.setVec3("_Color", triangleColor[0], triangleColor[1], triangleColor[2]);
 		shader.setFloat("_Brightness", triangleBrightness);
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		//glDrawArrays(GL_TRIANGLES, 0, VERT_COUNT);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		//Render UI
 		{
@@ -97,20 +107,26 @@ int main() {
 	printf("Shutting down...");
 }
 
-unsigned int createVAO(float* vertexData, int numVertices) {
-	unsigned int vao;
+GLuint createVAO(const float* vertexData, int numVertices, const unsigned int* indiciesData, int numIndicies) 
+{
+	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
 	//Define a new buffer id
-	unsigned int vbo;
+	GLuint vbo;
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	//Allocate space for + send vertex data to GPU.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * VERT_DATA_STRIDE, vertexData, GL_STATIC_DRAW);
+
+	GLuint ebo;
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * numIndicies, indiciesData, GL_STATIC_DRAW);
 
 	//Position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (const void*)0);
+	glVertexAttribPointer(0, VERT_DATA_STRIDE, GL_FLOAT, GL_FALSE, sizeof(float) * VERT_DATA_STRIDE, nullptr);
 	glEnableVertexAttribArray(0);
 
 	return vao;
