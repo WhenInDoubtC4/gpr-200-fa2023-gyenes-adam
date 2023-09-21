@@ -94,7 +94,7 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
-	Shader shader(VERT_SHADER_FILEPATH, FRAG_SHADER_FILEPATH);
+	Util::Shader shader(VERT_SHADER_FILEPATH, FRAG_SHADER_FILEPATH);
 	GLuint vao = createVAO(VERT_DATA, 4, VERT_INDICIES, 6);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

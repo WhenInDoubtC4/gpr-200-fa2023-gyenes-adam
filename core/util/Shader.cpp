@@ -1,6 +1,6 @@
 #include "Shader.h"
 
-Shader::Shader(const char* vertFilepath, const char* fragFilepath)
+Util::Shader::Shader(const char* vertFilepath, const char* fragFilepath)
 {
 	std::string vertSource = loadSourceFromFile(vertFilepath);
 	std::string fragSource = loadSourceFromFile(fragFilepath);
@@ -26,7 +26,7 @@ Shader::Shader(const char* vertFilepath, const char* fragFilepath)
 	glDeleteShader(fragShader);
 }
 
-std::string Shader::loadSourceFromFile(const char* filepath)
+std::string Util::Shader::loadSourceFromFile(const char* filepath)
 {
 	std::ifstream file(filepath);
 	assert(file.is_open());
@@ -38,37 +38,37 @@ std::string Shader::loadSourceFromFile(const char* filepath)
 	return source;
 }
 
-void Shader::setInt(const char* name, int value)
+void Util::Shader::setInt(const char* name, int value)
 {
 	glUniform1i(glGetUniformLocation(_shaderProgram, name), value);
 }
 
-void Shader::setFloat(const char* name, float value)
+void Util::Shader::setFloat(const char* name, float value)
 {
 	glUniform1f(glGetUniformLocation(_shaderProgram, name), value);
 }
 
-void Shader::setVec2(const char* name, float x, float y)
+void Util::Shader::setVec2(const char* name, float x, float y)
 {
 	glUniform2f(glGetUniformLocation(_shaderProgram, name), x, y);
 }
 
-void Shader::setVec3(const char* name, float x, float y, float z)
+void Util::Shader::setVec3(const char* name, float x, float y, float z)
 {
 	glUniform3f(glGetUniformLocation(_shaderProgram, name), x, y, z);
 }
 
-void Shader::setVec4(const char* name, float x, float y, float z, float w)
+void Util::Shader::setVec4(const char* name, float x, float y, float z, float w)
 {
 	glUniform4f(glGetUniformLocation(_shaderProgram, name), x, y, z, w);
 }
 
-void Shader::exec()
+void Util::Shader::exec()
 {
 	glUseProgram(_shaderProgram);
 }
 
-GLuint Shader::createShader(GLenum type, const char* source)
+GLuint Util::Shader::createShader(GLenum type, const char* source)
 {
 	GLuint shader = glCreateShader(type);
 
