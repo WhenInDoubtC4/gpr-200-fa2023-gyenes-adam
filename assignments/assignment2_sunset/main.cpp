@@ -39,9 +39,34 @@ constexpr unsigned int VERT_INDICIES[6] = {
 constexpr char VERT_SHADER_FILEPATH[] = "assets\\vertexShader.vert";
 constexpr char FRAG_SHADER_FILEPATH[] = "assets\\fragmentShader.frag";
 
-float triangleColor[3] = { 1.0f, 0.5f, 0.0f };
-float triangleBrightness = 1.0f;
-bool showImGUIDemoWindow = true;
+float timeScale = 1.f;
+
+float dayHorizonColor[3] = { 0.647f, 0.886f, 0.961f };
+float dayZenithColor[3] = { 0.302f, 0.478f, 0.659f };
+float nightHorizonColor[3] = { 0.961f, 0.443f, 0.09f };
+float nightZenithColor[3] = { 0.325f, 0.251f, 0.439f };
+
+float sunPosition[2] = { 0.f, 0.f };
+float sunColor[3] = { 1.f, 0.925f, 0.639f };
+float sunRadius = 0.05f;
+float sunSmoothness = 0.02f;
+float sunFlareRadius = 0.3f;
+float sunFlareSmoothness = 0.4f;
+float sunFlareIntenisty = 0.8f;
+
+float moonPosition[2] = { -0.8f, 0.5f };
+float moonColor[3] = { 0.878f, 0.957f, 1.0f };
+float moonRadius = 0.08f;
+float moonSmoothness = 0.01f;
+
+float hillsL1Color[3] = { 0.2f, 0.2f, 0.2f };
+float hillsL2Color[3] = { 0.3f, 0.3f, 0.3f };
+float treesColor[3] = { 0.4f, 0.4f, 0.4f };
+float shadowDarkess = .1f;
+float shadowIntenisty = .5f;
+float shadowLength = 0.05f;
+
+bool showImGUIDemoWindow = false;
 
 int main() {
 	printf("Initializing...");
@@ -82,11 +107,38 @@ int main() {
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Set uniforms
-		shader.setVec3("_Color", triangleColor[0], triangleColor[1], triangleColor[2]);
-		shader.setFloat("_Brightness", triangleBrightness);
+		float time = glfwGetTime();
 
-		//glDrawArrays(GL_TRIANGLES, 0, VERT_COUNT);
+		//Set uniforms
+		shader.setVec2("_resolution", float(SCREEN_WIDTH), float(SCREEN_HEIGHT));
+		shader.setFloat("_time", time);
+		shader.setFloat("_timeScale", timeScale);
+
+		shader.setVec3("_dayHorizonColor", dayHorizonColor[0], dayHorizonColor[1], dayHorizonColor[2]);
+		shader.setVec3("_dayZenithColor", dayZenithColor[0], dayZenithColor[1], dayZenithColor[2]);
+		shader.setVec3("_nightHorizonColor", nightHorizonColor[0], nightHorizonColor[1], nightHorizonColor[2]);
+		shader.setVec3("_nightZenithColor", nightZenithColor[0], nightZenithColor[1], nightZenithColor[2]);
+
+		shader.setVec2("_sunPos", sunPosition[0], sunPosition[1]);
+		shader.setVec3("_sunColor", sunColor[0], sunColor[1], sunColor[2]);
+		shader.setFloat("_sunRadius", sunRadius);
+		shader.setFloat("_sunSmoothness", sunSmoothness);
+		shader.setFloat("_sunFlareRadius", sunFlareRadius);
+		shader.setFloat("_sunFlareSmoothness", sunFlareSmoothness);
+		shader.setFloat("_sunFlareIntensity", sunFlareIntenisty);
+
+		shader.setVec2("_moonPos", moonPosition[0], moonPosition[1]);
+		shader.setVec3("_moonColor", moonColor[0], moonColor[1], moonColor[2]);
+		shader.setFloat("_moonRadius", moonRadius);
+		shader.setFloat("_moonSmoothness", moonSmoothness);
+
+		shader.setVec3("_hillsL1Color", hillsL1Color[0], hillsL1Color[1], hillsL1Color[2]);
+		shader.setVec3("_hillsL2Color", hillsL2Color[0], hillsL2Color[1], hillsL2Color[2]);
+		shader.setVec3("_treesColor", treesColor[0], treesColor[1], treesColor[2]);
+		shader.setFloat("_shadowDarkness", shadowDarkess);
+		shader.setFloat("_shadowIntensity", shadowIntenisty);
+		shader.setFloat("_shadowLength", shadowLength);
+
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		//Render UI
@@ -97,8 +149,45 @@ int main() {
 
 			ImGui::Begin("Settings");
 			ImGui::Checkbox("Show Demo Window", &showImGUIDemoWindow);
-			ImGui::ColorEdit3("Color", triangleColor);
-			ImGui::SliderFloat("Brightness", &triangleBrightness, 0.0f, 1.0f);
+			ImGui::InputFloat("Time scale", &timeScale, 0.1f, 0.f);
+			
+			if (ImGui::CollapsingHeader("Sky"))
+			{
+				ImGui::ColorEdit3("Day horizon color", dayHorizonColor, ImGuiColorEditFlags_Float);
+				ImGui::ColorEdit3("Day zenith color", dayZenithColor, ImGuiColorEditFlags_Float);
+				ImGui::ColorEdit3("Night horizon color", nightHorizonColor, ImGuiColorEditFlags_Float);
+				ImGui::ColorEdit3("Night zenith color", nightZenithColor, ImGuiColorEditFlags_Float);
+			}
+
+			if (ImGui::CollapsingHeader("Sun"))
+			{
+				ImGui::SliderFloat2("Sun position", sunPosition, -1.f, 1.f);
+				ImGui::ColorEdit3("Sun color", sunColor, ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("Sun radius", &sunRadius, 0.f, .5f);
+				ImGui::SliderFloat("Sun smoothness", &sunSmoothness, 0.f, .5f);
+				ImGui::SliderFloat("Sun flare radius", &sunFlareRadius, 0.f, 1.f);
+				ImGui::SliderFloat("Sun flare smoothness", &sunFlareSmoothness, 0.f, 1.f);
+				ImGui::SliderFloat("Sun flare intensity", &sunFlareIntenisty, 0.f, 1.f);
+			}
+
+			if (ImGui::CollapsingHeader("Moon"))
+			{
+				ImGui::SliderFloat2("Moon position", moonPosition, -1.f, 1.f);
+				ImGui::ColorEdit3("Moon color", moonColor, ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("Moon radius", &moonRadius, 0.f, .5f);
+				ImGui::SliderFloat("Moon smoothness", &moonSmoothness, 0.f, .5f);
+			}
+
+			if (ImGui::CollapsingHeader("Foreground"))
+			{
+				ImGui::ColorEdit3("L1 hills color", hillsL1Color, ImGuiColorEditFlags_Float);
+				ImGui::ColorEdit3("L2 hills color", hillsL2Color, ImGuiColorEditFlags_Float);
+				ImGui::ColorEdit3("Trees color", treesColor, ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("Shadow darkness", &shadowDarkess, 0.f, .5f);
+				ImGui::SliderFloat("Shadow intensity", &shadowIntenisty, 0.f, 1.f);
+				ImGui::SliderFloat("Shadow length", &shadowLength, 0.f, .5f);
+			}
+
 			ImGui::End();
 			if (showImGUIDemoWindow) {
 				ImGui::ShowDemoWindow(&showImGUIDemoWindow);
