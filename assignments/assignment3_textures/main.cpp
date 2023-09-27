@@ -10,6 +10,8 @@
 
 #include <ew/shader.h>
 
+#include "util/Texture.h"
+
 struct Vertex {
 	float x, y, z;
 	float u, v;
@@ -58,6 +60,10 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
+	GLuint brickTexture = Util::loadTexture("assets/Bricks059_2K-JPG_Color.jpg", GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, brickTexture);
+
 	ew::Shader shader("assets/vertexShader.vert", "assets/fragmentShader.frag");
 
 	unsigned int quadVAO = createVAO(vertices, 4, indices, 6);
@@ -70,6 +76,8 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Set uniforms
+		shader.setInt("_texture", 0);
+
 		shader.use();
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
