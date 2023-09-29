@@ -60,11 +60,15 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
 
-	GLuint brickTexture = Util::loadTexture("assets/Bricks059_2K-JPG_Color.jpg", GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, brickTexture);
+	//Enable blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	ew::Shader shader("assets/vertexShader.vert", "assets/fragmentShader.frag");
+	GLuint brickTexture = Util::loadTexture("assets/Bricks059_2K-JPG_Color.jpg", GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR);
+	GLuint characterTexture = Util::loadTexture("assets/character.png", GL_CLAMP_TO_EDGE, GL_NEAREST);
+
+	ew::Shader backgroundShader("assets/background.vert", "assets/background.frag");
+	ew::Shader characterShader("assets/character.vert", "assets/character.frag");
 
 	unsigned int quadVAO = createVAO(vertices, 4, indices, 6);
 
@@ -75,11 +79,18 @@ int main() {
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Set uniforms
-		shader.setInt("_texture", 0);
+		//Draw background
+		backgroundShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, brickTexture);
+		backgroundShader.setInt("_texture", 0);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
 
-		shader.use();
-
+		//Draw character
+		characterShader.use();
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, characterTexture);
+		characterShader.setInt("_texture", 1);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
 
 		//Render UI
