@@ -8,7 +8,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#include <ew/shader.h>
+#include <util/shader.h>
 
 #include "util/Texture.h"
 
@@ -33,6 +33,16 @@ unsigned short indices[6] = {
 	0, 1, 2,
 	2, 3, 0
 };
+
+//Background params
+float waterColor[3] = { 0.631f, 0.898f, 1.f };
+float waveSpeed = .1f;
+float warpIntensity = .2f;
+
+//Character params
+float characterScale = .4f;
+float characterMinOffset[2] = { -1.f, -1.f };
+float characterMaxOffset[2] = { 1.f, 1.f };
 
 int main() {
 	printf("Initializing...");
@@ -65,10 +75,11 @@ int main() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	GLuint brickTexture = Util::loadTexture("assets/Bricks059_2K-JPG_Color.jpg", GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR);
+	GLuint noiseTexture = Util::loadTexture("assets/noiseTexture.png", GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR);
 	GLuint characterTexture = Util::loadTexture("assets/character.png", GL_CLAMP_TO_EDGE, GL_NEAREST);
 
-	ew::Shader backgroundShader("assets/background.vert", "assets/background.frag");
-	ew::Shader characterShader("assets/character.vert", "assets/character.frag");
+	Util::Shader backgroundShader("assets/background.vert", "assets/background.frag");
+	Util::Shader characterShader("assets/character.vert", "assets/character.frag");
 
 	unsigned int quadVAO = createVAO(vertices, 4, indices, 6);
 
@@ -79,18 +90,25 @@ int main() {
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		float time = glfwGetTime();
+
 		//Draw background
-		backgroundShader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, brickTexture);
-		backgroundShader.setInt("_texture", 0);
+		backgroundShader.exec();
+		SET_SHADER_TEXTURE(backgroundShader, "_backgroundTexture", brickTexture, 0);
+		SET_SHADER_TEXTURE(backgroundShader, "_noiseTexture", noiseTexture, 1);
+		backgroundShader.setFloat("_time", time);
+		backgroundShader.setVec3("_waterColor", waterColor[0], waterColor[1], waterColor[2]);
+		backgroundShader.setFloat("_waveSpeed", waveSpeed);
+		backgroundShader.setFloat("_warpIntenisty", warpIntensity);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
 
 		//Draw character
-		characterShader.use();
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, characterTexture);
-		characterShader.setInt("_texture", 1);
+		characterShader.exec();
+		SET_SHADER_TEXTURE(characterShader, "_texture", characterTexture, 2);
+		characterShader.setFloat("_time", time);
+		characterShader.setFloat("_scale", characterScale);
+		characterShader.setVec2("_minOffset", characterMinOffset[0], characterMinOffset[1]);
+		characterShader.setVec2("_maxOffset", characterMaxOffset[0], characterMaxOffset[1]);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL);
 
 		//Render UI
@@ -100,6 +118,21 @@ int main() {
 			ImGui::NewFrame();
 
 			ImGui::Begin("Settings");
+
+			if (ImGui::CollapsingHeader("Backround"))
+			{
+				ImGui::ColorEdit3("Water color", waterColor, ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("Wave speed", &waveSpeed, 0.f, 1.f);
+				ImGui::SliderFloat("Warp intensity", &warpIntensity, 0.f, 1.f);
+			}
+
+			if (ImGui::CollapsingHeader("Character"))
+			{
+				ImGui::SliderFloat("Character scale", &characterScale, 0.f, 1.f);
+				ImGui::SliderFloat2("Character min offset", characterMinOffset, -1.f, 0.f);
+				ImGui::SliderFloat2("Character max offset", characterMaxOffset, 0.f, 1.f);
+			}
+			
 			ImGui::End();
 
 			ImGui::Render();

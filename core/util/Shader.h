@@ -10,6 +10,11 @@
 
 #include "Global.h"
 
+#define SET_SHADER_TEXTURE(shader, name, texture, id) \
+	glActiveTexture(GL_TEXTURE##id); \
+	glBindTexture(GL_TEXTURE_2D, texture); \
+	shader.setInt(name, id);
+
 namespace Util
 {
 	class Shader
