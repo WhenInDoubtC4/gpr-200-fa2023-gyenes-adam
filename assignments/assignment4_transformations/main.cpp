@@ -22,6 +22,9 @@ const int SCREEN_WIDTH = 720;
 const int SCREEN_HEIGHT = 720;
 
 constexpr size_t CUBE_COUNT = 4;
+constexpr int GRID_COL_COUNT = 2;
+const ew::Vec3 GRID_TOP_LEFT = ew::Vec3(-0.5f, 0.5f, 0.f);
+const ew::Vec3 GRID_BOTTOM_RIGHT = ew::Vec3(0.5f, -0.5f, 0.f);
 Util::Transform modelTransform[CUBE_COUNT];
 
 int main() {
@@ -58,10 +61,17 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	//Equally distribute cube positions
-	modelTransform[0].position = ew::Vec3(-0.5f, 0.5f);
-	modelTransform[1].position = ew::Vec3(0.5f, 0.5f);
-	modelTransform[2].position = ew::Vec3(-0.5f, -0.5f);
-	modelTransform[3].position = ew::Vec3(0.5f, -0.5f);
+	int xIndex = 0;
+	int yIndex = 0;
+	const float xStep = ((GRID_BOTTOM_RIGHT.x - GRID_TOP_LEFT.x) * 2.f) / GRID_COL_COUNT;
+	const float yStep = ((GRID_TOP_LEFT.y - GRID_BOTTOM_RIGHT.y) * 2.f) / (CUBE_COUNT / GRID_COL_COUNT);
+	for (size_t i = 0; i < CUBE_COUNT; i++)
+	{
+		xIndex = i % GRID_COL_COUNT;
+		yIndex = i / GRID_COL_COUNT;
+
+		modelTransform[i].position = ew::Vec3(GRID_TOP_LEFT.x + xStep * xIndex, GRID_BOTTOM_RIGHT.y + yStep * yIndex);
+	}
 	Util::Shader shader("assets/vertexShader.vert", "assets/fragmentShader.frag");
 	
 	//Cube mesh
