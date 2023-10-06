@@ -99,13 +99,13 @@ namespace Util
 		{
 			ew::Mat4 result = Identity();
 
-			result *= Scale(scale);
+			result *= Translate(position);
 
 			result *= RotateY(DegToRad(rotateDeg.y));
 			result *= RotateX(DegToRad(rotateDeg.x));
 			result *= RotateZ(DegToRad(rotateDeg.z));
 
-			result *= Translate(position);
+			result *= Scale(scale);
 
 			return result;
 		}
