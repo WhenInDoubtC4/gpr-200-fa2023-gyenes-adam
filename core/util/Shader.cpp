@@ -63,6 +63,11 @@ void Util::Shader::setVec4(const char* name, float x, float y, float z, float w)
 	glUniform4f(glGetUniformLocation(_shaderProgram, name), x, y, z, w);
 }
 
+void Util::Shader::setMat4(const char* name, const ew::Mat4& value)
+{
+	glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, name), 1, GL_FALSE, &value[0][0]);
+}
+
 void Util::Shader::exec()
 {
 	glUseProgram(_shaderProgram);

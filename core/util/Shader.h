@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "../ew/external/glad.h"
+#include "../ew/ewMath/mat4.h"
 #include <GLFW/glfw3.h>
 
 #include "Global.h"
@@ -29,6 +30,7 @@ namespace Util
 		void setVec2(const char* name, float x, float y);
 		void setVec3(const char* name, float x, float y, float z);
 		void setVec4(const char* name, float x, float y, float z, float w);
+		void setMat4(const char* name, const ew::Mat4& value);
 
 		void exec();
 
