@@ -110,4 +110,43 @@ namespace Util
 			return result;
 		}
 	};
+
+	inline ew::Mat4 LookAt(ew::Vec3 cameraPosition, ew::Vec3 target, ew::Vec3 upVector = ew::Vec3(0.f, 1.f, 0.f))
+	{
+		//Calculate new basis vectors
+		ew::Vec3 forward = ew::Normalize(target - cameraPosition);
+		ew::Vec3 right = ew::Normalize(ew::Cross(upVector, forward));
+		ew::Vec3 newUp = ew::Normalize(ew::Cross(forward, right));
+
+		//Transpose (=inverse) of rotation matrix * inverse translate, precomputed
+		return ew::Mat4(
+			right.x, right.y, right.z, -ew::Dot(right, cameraPosition),
+			newUp.x, newUp.y, newUp.z, -ew::Dot(newUp, cameraPosition),
+			forward.x, forward.y, forward.z, -ew::Dot(forward, cameraPosition),
+			0, 0, 0, 1
+		);
+	}
+
+	inline ew::Mat4 Ortographic(float height, float aspectRatio, float nearPlane, float farPlane)
+	{
+		float width = height * aspectRatio;
+
+		//Bounds
+		float right = width / 2.f;
+		float top = height / 2.f;
+		float left = -right;
+		float bottom = -top;
+
+		return ew::Mat4(
+			2.f / (right - left), 0, 0, -(right + left) / (right - left),
+			0, 2.f / (top - bottom), 0, -(top + bottom) / (top - bottom),
+			0, 0, -2.f / (farPlane - nearPlane), -(farPlane + nearPlane) / (farPlane - nearPlane),
+			0, 0, 0, 1
+		);
+	}
+
+	inline ew::Mat4 Perspective(float fov, float aspectRatio, float nearPlane, float farPlane)
+	{
+
+	}
 }
