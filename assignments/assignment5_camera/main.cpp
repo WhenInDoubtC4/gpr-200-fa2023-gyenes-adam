@@ -12,6 +12,8 @@
 #include <ew/procGen.h>
 #include <ew/transform.h>
 
+#include "util/Camera.h"
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 //Projection will account for aspect ratio!
@@ -20,6 +22,18 @@ const int SCREEN_HEIGHT = 720;
 
 const int NUM_CUBES = 4;
 ew::Transform cubeTransforms[NUM_CUBES];
+
+void InitCameraSettings(Util::Camera& camera)
+{
+	camera.position = ew::Vec3(0.f, 0.f, 5.f);
+	camera.target = ew::Vec3(0.f, 0.f, 0.f);
+	camera.fov = 60.f;
+	camera.aspectRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+	camera.nearPlane = 0.1f;
+	camera.farPlane = 100.f;
+	camera.isOrthographic = false;
+	camera.ortographicHeight = 6.f;
+}
 
 int main() {
 	printf("Initializing...");
@@ -59,6 +73,9 @@ int main() {
 	//Cube mesh
 	ew::Mesh cubeMesh(ew::createCube(0.5f));
 
+	Util::Camera camera;
+	InitCameraSettings(camera);
+
 	//Cube positions
 	for (size_t i = 0; i < NUM_CUBES; i++)
 	{
@@ -74,6 +91,8 @@ int main() {
 
 		//Set uniforms
 		shader.use();
+		shader.setMat4("_view", camera.ViewMatrix());
+		shader.setMat4("_world", camera.ProjectionMatrix());
 
 		//TODO: Set model matrix uniform
 		for (size_t i = 0; i < NUM_CUBES; i++)
@@ -102,6 +121,20 @@ int main() {
 				ImGui::PopID();
 			}
 			ImGui::Text("Camera");
+			ImGui::DragFloat3("Position", &camera.position.x, 0.05f);
+			ImGui::DragFloat3("Target", &camera.target.x, 0.05f);
+			ImGui::Checkbox("Ortographic", &camera.isOrthographic);
+			if (camera.isOrthographic)
+			{
+				ImGui::DragFloat("Ortho height", &camera.ortographicHeight, 0.05f);
+			}
+			else
+			{
+				ImGui::SliderFloat("FOV", &camera.fov, 20.f, 180.f);
+			}
+			ImGui::DragFloat("Near clip plane", &camera.nearPlane, 0.05f);
+			ImGui::DragFloat("Far clip plane", &camera.farPlane, 0.2f);
+			if (ImGui::Button("Reset")) InitCameraSettings(camera);
 			ImGui::End();
 			
 			ImGui::Render();

@@ -14,7 +14,7 @@ namespace Util
 		float nearPlane;
 		float farPlane;
 		bool isOrthographic;
-		float ortographicSize;
+		float ortographicHeight;
 		ew::Mat4 ViewMatrix();
 		ew::Mat4 ProjectionMatrix();
 	};

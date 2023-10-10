@@ -99,13 +99,13 @@ namespace Util
 		{
 			ew::Mat4 result = Identity();
 
-			result *= Translate(position);
+			result *= Util::Translate(position);
 
-			result *= RotateY(DegToRad(rotateDeg.y));
-			result *= RotateX(DegToRad(rotateDeg.x));
-			result *= RotateZ(DegToRad(rotateDeg.z));
+			result *= Util::RotateY(DegToRad(rotateDeg.y));
+			result *= Util::RotateX(DegToRad(rotateDeg.x));
+			result *= Util::RotateZ(DegToRad(rotateDeg.z));
 
-			result *= Scale(scale);
+			result *= Util::Scale(scale);
 
 			return result;
 		}
@@ -114,7 +114,7 @@ namespace Util
 	inline ew::Mat4 LookAt(ew::Vec3 cameraPosition, ew::Vec3 target, ew::Vec3 upVector = ew::Vec3(0.f, 1.f, 0.f))
 	{
 		//Calculate new basis vectors
-		ew::Vec3 forward = ew::Normalize(target - cameraPosition);
+		ew::Vec3 forward = ew::Normalize(cameraPosition - target);
 		ew::Vec3 right = ew::Normalize(ew::Cross(upVector, forward));
 		ew::Vec3 newUp = ew::Normalize(ew::Cross(forward, right));
 
@@ -147,6 +147,13 @@ namespace Util
 
 	inline ew::Mat4 Perspective(float fov, float aspectRatio, float nearPlane, float farPlane)
 	{
+		float fovRad = DegToRad(fov);
 
+		return ew::Mat4(
+			1.f / (tan(fovRad / 2.f) * aspectRatio), 0, 0, 0,
+			0, 1.f / tan(fovRad / 2.f), 0, 0,
+			0, 0, (nearPlane + farPlane) / (nearPlane - farPlane), (2 * farPlane * nearPlane) / (nearPlane - farPlane),
+			0, 0, -1, 0
+		);
 	}
 }
