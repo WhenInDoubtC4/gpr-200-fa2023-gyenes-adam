@@ -89,12 +89,16 @@ int main() {
 		//Clear both color buffer AND depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		int windowWidth, windowHeight;
+		glfwGetWindowSize(window, &windowWidth, &windowHeight);
+		camera.aspectRatio = float(windowWidth) / float(windowHeight);
+
 		//Set uniforms
 		shader.use();
 		shader.setMat4("_view", camera.ViewMatrix());
 		shader.setMat4("_world", camera.ProjectionMatrix());
 
-		//TODO: Set model matrix uniform
+		//Set model matrix uniform
 		for (size_t i = 0; i < NUM_CUBES; i++)
 		{
 			//Construct model matrix
