@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../ew/ewMath/vec2.h"
 #include "../ew/ewMath/vec3.h"
 #include "../ew/ewMath/mat4.h"
 
@@ -17,5 +18,14 @@ namespace Util
 		float ortographicHeight;
 		ew::Mat4 ViewMatrix();
 		ew::Mat4 ProjectionMatrix();
+	};
+
+	struct CameraControls
+	{
+		ew::Vec2 prevMousePos;
+		float yawDeg, pitchDeg = 0.f;
+		float mouseSensitivity = 0.1f;
+		bool storeInitialMousePos = true;
+		float movementSpeed = 5.0f;
 	};
 }

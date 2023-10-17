@@ -13,6 +13,8 @@
 #include <ew/transform.h>
 
 #include "util/Camera.h"
+//#include "util/Transformations.h"
+#include "util/Global.h"
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
@@ -33,6 +35,56 @@ void InitCameraSettings(Util::Camera& camera)
 	camera.farPlane = 100.f;
 	camera.isOrthographic = false;
 	camera.ortographicHeight = 6.f;
+}
+
+void moveCamera(GLFWwindow* window, Util::Camera* camera, Util::CameraControls* cameraControls)
+{
+	//RMB not down
+	if (!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
+	{
+		//Release cursor
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		cameraControls->storeInitialMousePos = true;
+		return;
+	}
+
+	//Hide cursor
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	double mouseX, mouseY;
+	glfwGetCursorPos(window, &mouseX, &mouseY);
+	ew::Vec2 currentMousePos(mouseX, mouseY);
+
+	if (cameraControls->storeInitialMousePos)
+	{
+		cameraControls->storeInitialMousePos = false;
+		cameraControls->prevMousePos = currentMousePos;
+	}
+
+	//Get mouse delta for this frame
+	ew::Vec2 deltaMousePos = currentMousePos - cameraControls->prevMousePos;
+
+	//Add to yaw and pitch
+	cameraControls->yawDeg += deltaMousePos.x * cameraControls->mouseSensitivity;
+	cameraControls->pitchDeg -= deltaMousePos.y * cameraControls->mouseSensitivity;
+
+	//Clamp pitch between -89 and 89 degrees
+	cameraControls->pitchDeg = fmin(89.f, cameraControls->pitchDeg);
+	cameraControls->pitchDeg = fmax(-89.f, cameraControls->pitchDeg);
+
+	//Store last mouse pos
+	cameraControls->prevMousePos = currentMousePos;
+	
+	//Construct basis vectors
+	float yawRad = Util::DegToRad(cameraControls->yawDeg); //theta
+	float pitchRad = Util::DegToRad(cameraControls->pitchDeg); //phi
+
+	ew::Vec3 tempUp(0.f, 1.f, 0.f);
+	ew::Vec3 forward(cos(yawRad) * cos(pitchRad), sin(pitchRad), sin(yawRad) * cos(pitchRad));
+	ew::Vec3 right = ew::Normalize(ew::Cross(forward, tempUp));
+	ew::Vec3 up = ew::Normalize(ew::Cross(right, forward));
+
+	camera->target = /*camera->position +*/ forward;
 }
 
 int main() {
@@ -74,6 +126,7 @@ int main() {
 	ew::Mesh cubeMesh(ew::createCube(0.5f));
 
 	Util::Camera camera;
+	Util::CameraControls cameraControls;
 	InitCameraSettings(camera);
 
 	//Cube positions
@@ -85,6 +138,8 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+		moveCamera(window, &camera, &cameraControls);
+
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		//Clear both color buffer AND depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

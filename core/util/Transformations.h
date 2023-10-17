@@ -7,17 +7,14 @@
 #include "../ew/ewMath/mat4.h"
 #include "../ew/ewMath/vec3.h"
 
+#include "Global.h"
+
 namespace Util
 {
 	ew::Mat4& operator*=(ew::Mat4& lhs, const ew::Mat4& rhs)
 	{
 		lhs = lhs * rhs;
 		return lhs;
-	}
-
-	inline constexpr float DegToRad(float deg)
-	{
-		return deg * (M_PI / 180.f);
 	}
 
 	inline ew::Mat4 Identity()
