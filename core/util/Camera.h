@@ -23,9 +23,10 @@ namespace Util
 	struct CameraControls
 	{
 		ew::Vec2 prevMousePos;
-		float yawDeg, pitchDeg = 0.f;
+		float yawDeg = -90.f;
+		float pitchDeg = 0.f; 
 		float mouseSensitivity = 0.1f;
 		bool storeInitialMousePos = true;
-		float movementSpeed = 5.0f;
+		float movementSpeed = 5.f;
 	};
 }

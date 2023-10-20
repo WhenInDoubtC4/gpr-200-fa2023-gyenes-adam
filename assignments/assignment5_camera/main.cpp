@@ -25,7 +25,7 @@ const int SCREEN_HEIGHT = 720;
 const int NUM_CUBES = 4;
 ew::Transform cubeTransforms[NUM_CUBES];
 
-void InitCameraSettings(Util::Camera& camera)
+void InitCameraSettings(Util::Camera& camera, Util::CameraControls& cameraConrtrols)
 {
 	camera.position = ew::Vec3(0.f, 0.f, 5.f);
 	camera.target = ew::Vec3(0.f, 0.f, 0.f);
@@ -35,9 +35,15 @@ void InitCameraSettings(Util::Camera& camera)
 	camera.farPlane = 100.f;
 	camera.isOrthographic = false;
 	camera.ortographicHeight = 6.f;
+
+	cameraConrtrols.yawDeg = -90.f;
+	cameraConrtrols.pitchDeg = 0.f;
+	cameraConrtrols.storeInitialMousePos = true;
+	cameraConrtrols.mouseSensitivity = 0.1f;
+	cameraConrtrols.movementSpeed = 5.f;
 }
 
-void moveCamera(GLFWwindow* window, Util::Camera* camera, Util::CameraControls* cameraControls)
+void moveCamera(GLFWwindow* window, Util::Camera* camera, Util::CameraControls* cameraControls, float deltaTime)
 {
 	//RMB not down
 	if (!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
@@ -72,6 +78,9 @@ void moveCamera(GLFWwindow* window, Util::Camera* camera, Util::CameraControls* 
 	cameraControls->pitchDeg = fmin(89.f, cameraControls->pitchDeg);
 	cameraControls->pitchDeg = fmax(-89.f, cameraControls->pitchDeg);
 
+	//Keep yaw between 0 and 360
+	cameraControls->yawDeg -= 360.f * (int(cameraControls->yawDeg) / 360);
+
 	//Store last mouse pos
 	cameraControls->prevMousePos = currentMousePos;
 	
@@ -84,7 +93,12 @@ void moveCamera(GLFWwindow* window, Util::Camera* camera, Util::CameraControls* 
 	ew::Vec3 right = ew::Normalize(ew::Cross(forward, tempUp));
 	ew::Vec3 up = ew::Normalize(ew::Cross(right, forward));
 
-	camera->target = /*camera->position +*/ forward;
+	if (glfwGetKey(window, GLFW_KEY_W)) camera->position += forward * cameraControls->movementSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_S))	camera->position += -forward * cameraControls->movementSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_A)) camera->position += -right * cameraControls->movementSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_D)) camera->position += right * cameraControls->movementSpeed * deltaTime;
+
+	camera->target = camera->position + forward;
 }
 
 int main() {
@@ -127,7 +141,7 @@ int main() {
 
 	Util::Camera camera;
 	Util::CameraControls cameraControls;
-	InitCameraSettings(camera);
+	InitCameraSettings(camera, cameraControls);
 
 	//Cube positions
 	for (size_t i = 0; i < NUM_CUBES; i++)
@@ -136,9 +150,15 @@ int main() {
 		cubeTransforms[i].position.y = i / (NUM_CUBES / 2) - 0.5;
 	}
 
+	double prevTime = 0.;
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
-		moveCamera(window, &camera, &cameraControls);
+
+		double currentTime = glfwGetTime();
+		float deltaTime = currentTime - prevTime;
+		prevTime = currentTime;
+
+		moveCamera(window, &camera, &cameraControls, deltaTime);
 
 		glClearColor(0.3f, 0.4f, 0.9f, 1.0f);
 		//Clear both color buffer AND depth buffer
@@ -193,7 +213,11 @@ int main() {
 			}
 			ImGui::DragFloat("Near clip plane", &camera.nearPlane, 0.05f);
 			ImGui::DragFloat("Far clip plane", &camera.farPlane, 0.2f);
-			if (ImGui::Button("Reset")) InitCameraSettings(camera);
+			ImGui::Text("Yaw=%f", cameraControls.yawDeg);
+			ImGui::Text("Pitch=%f", cameraControls.pitchDeg);
+			ImGui::DragFloat("Mouse sensitivity", &cameraControls.mouseSensitivity, 0.01f, 0.01f, 1.f);
+			ImGui::DragFloat("Movement speed", &cameraControls.movementSpeed, 0.1f, 0.1f, 50.f);
+			if (ImGui::Button("Reset")) InitCameraSettings(camera, cameraControls);
 			ImGui::End();
 			
 			ImGui::Render();
