@@ -78,8 +78,8 @@ void moveCamera(GLFWwindow* window, Util::Camera* camera, Util::CameraControls* 
 	cameraControls->pitchDeg = fmin(89.f, cameraControls->pitchDeg);
 	cameraControls->pitchDeg = fmax(-89.f, cameraControls->pitchDeg);
 
-	//Keep yaw between 0 and 360
-	cameraControls->yawDeg -= 360.f * (int(cameraControls->yawDeg) / 360);
+	//Keep yaw between -180 and 180
+	cameraControls->yawDeg -= 360.f * (int(cameraControls->yawDeg) / 180);
 
 	//Store last mouse pos
 	cameraControls->prevMousePos = currentMousePos;
@@ -97,6 +97,9 @@ void moveCamera(GLFWwindow* window, Util::Camera* camera, Util::CameraControls* 
 	if (glfwGetKey(window, GLFW_KEY_S))	camera->position += -forward * cameraControls->movementSpeed * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_A)) camera->position += -right * cameraControls->movementSpeed * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_D)) camera->position += right * cameraControls->movementSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_Q)) camera->position += up * cameraControls->movementSpeed * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_E)) camera->position += -up * cameraControls->movementSpeed * deltaTime;
+
 
 	camera->target = camera->position + forward;
 }
