@@ -15,6 +15,8 @@
 #include <ew/camera.h>
 #include <ew/cameraController.h>
 
+#include "util/ProcGen.h"
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void resetCamera(ew::Camera& camera, ew::CameraController& cameraController);
 
@@ -78,6 +80,24 @@ int main() {
 	ew::Shader shader("assets/vertexShader.vert", "assets/fragmentShader.frag");
 	unsigned int brickTexture = ew::loadTexture("assets/brick_color.jpg",GL_REPEAT,GL_LINEAR);
 
+	//Plane
+	float planeWidth = 1.f;
+	float planeHeight = 1.f;
+	int planeSubdivisions = 5;
+	ew::MeshData planeMeshData = Util::createPlane(planeWidth, planeHeight, planeSubdivisions);
+	ew::Mesh planeMesh(planeMeshData);
+	ew::Transform planeTransform;
+	planeTransform.position = ew::Vec3(-3.f, 0.f, 0.f);
+
+	//Cylinder
+	float cylinderHeight = 2.f;
+	float cylinderRadius = 1.f;
+	int cylinderSegments = 8;
+	ew::MeshData cylinderMeshData = Util::createCylidner(cylinderHeight, cylinderRadius, cylinderSegments);
+	ew::Mesh cylinderMesh(cylinderMeshData);
+	ew::Transform cylinderTransform;
+	cylinderTransform.position = ew::Vec3(-6.f, 0.f, 0.f);
+
 	//Create cube
 	ew::MeshData cubeMeshData = ew::createCube(0.5f);
 	ew::Mesh cubeMesh(cubeMeshData);
@@ -121,6 +141,14 @@ int main() {
 		shader.setMat4("_Model", cubeTransform.getModelMatrix());
 		cubeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
+		//Draw plane
+		shader.setMat4("_Model", planeTransform.getModelMatrix());
+		planeMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+
+		//Draw cylidner
+		shader.setMat4("_Model", cylinderTransform.getModelMatrix());
+		cylinderMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+
 		//Render UI
 		{
 			ImGui_ImplGlfw_NewFrame();
@@ -162,6 +190,24 @@ int main() {
 					glEnable(GL_CULL_FACE);
 				else
 					glDisable(GL_CULL_FACE);
+			}
+			if (ImGui::CollapsingHeader("Plane"))
+			{
+				ImGui::DragFloat("Plane width", &planeWidth, 0.05f, 0.05f, 10.f);
+				ImGui::DragFloat("Plane height", &planeHeight, 0.05f, 0.05f, 10.f);
+				ImGui::SliderInt("Plane subdivisions", &planeSubdivisions, 1, 20);
+				
+				planeMeshData = Util::createPlane(planeWidth, planeHeight, planeSubdivisions);
+				planeMesh = ew::Mesh(planeMeshData);
+			}
+			if (ImGui::CollapsingHeader("Cylinder"))
+			{
+				ImGui::DragFloat("Cylinder height", &cylinderHeight, 0.05f, 0.2f, 10.f);
+				ImGui::DragFloat("Cylinder radius", &cylinderRadius, 0.05f, 0.1f, 5.f);
+				ImGui::SliderInt("Cuylinder segments", &cylinderSegments, 1, 20);
+
+				cylinderMeshData = Util::createCylidner(cylinderHeight, cylinderRadius, cylinderSegments);
+				cylinderMesh = ew::Mesh(cylinderMeshData);
 			}
 			ImGui::End();
 			
