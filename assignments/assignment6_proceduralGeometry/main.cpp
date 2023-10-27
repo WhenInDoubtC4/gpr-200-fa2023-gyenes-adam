@@ -98,6 +98,14 @@ int main() {
 	ew::Transform cylinderTransform;
 	cylinderTransform.position = ew::Vec3(-6.f, 0.f, 0.f);
 
+	//Sphere
+	float sphereRadius = 1.f;
+	int sphereSegments = 8;
+	ew::MeshData sphereMeshData = Util::createSphere(sphereRadius, sphereSegments);
+	ew::Mesh sphereMesh(sphereMeshData);
+	ew::Transform sphereTransform;
+	sphereTransform.position = ew::Vec3(3.f, 0.f, 0.f);
+
 	//Create cube
 	ew::MeshData cubeMeshData = ew::createCube(0.5f);
 	ew::Mesh cubeMesh(cubeMeshData);
@@ -148,6 +156,10 @@ int main() {
 		//Draw cylidner
 		shader.setMat4("_Model", cylinderTransform.getModelMatrix());
 		cylinderMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+
+		//Draw sphere
+		shader.setMat4("_Model", sphereTransform.getModelMatrix());
+		sphereMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Render UI
 		{
@@ -208,6 +220,14 @@ int main() {
 
 				cylinderMeshData = Util::createCylidner(cylinderHeight, cylinderRadius, cylinderSegments);
 				cylinderMesh = ew::Mesh(cylinderMeshData);
+			}
+			if (ImGui::CollapsingHeader("Sphere"))
+			{
+				ImGui::DragFloat("Sphere radius", &sphereRadius, 0.05f, 0.05f, 10.f);
+				ImGui::SliderInt("Sphere segments", &sphereSegments, 3, 64);
+
+				sphereMeshData = Util::createSphere(sphereRadius, sphereSegments);
+				sphereMesh = ew::Mesh(sphereMeshData);
 			}
 			ImGui::End();
 			
