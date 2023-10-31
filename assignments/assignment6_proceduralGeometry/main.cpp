@@ -106,6 +106,16 @@ int main() {
 	ew::Transform sphereTransform;
 	sphereTransform.position = ew::Vec3(3.f, 0.f, 0.f);
 
+	//Torus
+	float torusInnerRadius = 0.3f;
+	float torusOuterRadius = 2.f;
+	int torusInnerSegments = 15;
+	int torusOuterSegments = 15;
+	ew::MeshData torusMeshData = Util::createTorus(torusInnerRadius, torusOuterRadius, torusInnerSegments, torusOuterSegments);
+	ew::Mesh torusMesh(torusMeshData);
+	ew::Transform torusTransform;
+	torusTransform.position = ew::Vec3(8.f, 0.f, 0.f);
+
 	//Create cube
 	ew::MeshData cubeMeshData = ew::createCube(0.5f);
 	ew::Mesh cubeMesh(cubeMeshData);
@@ -160,6 +170,10 @@ int main() {
 		//Draw sphere
 		shader.setMat4("_Model", sphereTransform.getModelMatrix());
 		sphereMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
+
+		//Draw torus
+		shader.setMat4("_Model", torusTransform.getModelMatrix());
+		torusMesh.draw((ew::DrawMode)appSettings.drawAsPoints);
 
 		//Render UI
 		{
@@ -228,6 +242,16 @@ int main() {
 
 				sphereMeshData = Util::createSphere(sphereRadius, sphereSegments);
 				sphereMesh = ew::Mesh(sphereMeshData);
+			}
+			if (ImGui::CollapsingHeader("Torus"))
+			{
+				ImGui::DragFloat("Torus inner radius", &torusInnerRadius, 0.05f, 0.05f, 5.f);
+				ImGui::DragFloat("Torus outer radius", &torusOuterRadius, 0.05f, 0.05f, 10.f);
+				ImGui::SliderInt("Torus inner segments", &torusInnerSegments, 3, 64);
+				ImGui::SliderInt("Torus outer segments", &torusOuterSegments, 3, 64);
+
+				torusMeshData = Util::createTorus(torusInnerRadius, torusOuterRadius, torusInnerSegments, torusOuterSegments);
+				torusMesh = ew::Mesh(torusMeshData);
 			}
 			ImGui::End();
 			

@@ -195,3 +195,34 @@ ew::MeshData Util::createSphere(float radius, int segments)
 
 	return result;
 }
+
+//From https://lindenreidblog.com/2017/11/06/procedural-torus-tutorial/
+ew::MeshData Util::createTorus(float innerRadius, float outerRadius, int innerSegments, int outerSegments)
+{
+	ew::MeshData result;
+
+	float innerAngleStep = 2.f * M_PI / innerSegments; //phi
+	float outerAngleStep = 2.f * M_PI / outerSegments; //theta
+
+	for (int stack = 0; stack < outerSegments; stack++)
+	{
+		float outerAngle = stack * outerAngleStep;
+		for (int slice = 0; slice < innerSegments; slice++)
+		{
+			float innerAngle = slice * innerAngleStep;
+
+			//Generate vertices
+			ew::Vertex currentVert;
+			currentVert.pos.x = cos(outerAngle) * (outerRadius + cos(innerAngle) * innerRadius);
+			currentVert.pos.y = sin(outerAngle) * (outerRadius + cos(innerAngle) * innerRadius);
+			currentVert.pos.z = sin(innerAngle) * innerRadius;
+			//Generate normals
+			ew::Vec3 sliceCenterPos(cos(outerAngle) * outerRadius, sin(outerAngle) * outerRadius, 0.f);
+			currentVert.normal = ew::Normalize(currentVert.pos - sliceCenterPos);
+
+			result.vertices.push_back(currentVert);
+		}
+	}
+
+	return result;
+}
