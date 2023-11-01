@@ -204,9 +204,11 @@ ew::MeshData Util::createTorus(float innerRadius, float outerRadius, int innerSe
 	float innerAngleStep = 2.f * M_PI / innerSegments; //phi
 	float outerAngleStep = 2.f * M_PI / outerSegments; //theta
 
-	for (int stack = 0; stack < outerSegments; stack++)
+	for (int stack = 0; stack < outerSegments ; stack++)
 	{
 		float outerAngle = stack * outerAngleStep;
+		ew::Vec3 sliceCenterPos(cos(outerAngle) * outerRadius, sin(outerAngle) * outerRadius, 0.f);
+
 		for (int slice = 0; slice < innerSegments; slice++)
 		{
 			float innerAngle = slice * innerAngleStep;
@@ -217,10 +219,58 @@ ew::MeshData Util::createTorus(float innerRadius, float outerRadius, int innerSe
 			currentVert.pos.y = sin(outerAngle) * (outerRadius + cos(innerAngle) * innerRadius);
 			currentVert.pos.z = sin(innerAngle) * innerRadius;
 			//Generate normals
-			ew::Vec3 sliceCenterPos(cos(outerAngle) * outerRadius, sin(outerAngle) * outerRadius, 0.f);
 			currentVert.normal = ew::Normalize(currentVert.pos - sliceCenterPos);
+			//Generate UVs
+			currentVert.uv = ew::Vec2(stack / float(outerSegments), slice / float(innerSegments));
 
 			result.vertices.push_back(currentVert);
+		}
+
+		//Extra vertex in each slice for UV seam
+		ew::Vertex extraSliceVert;
+		extraSliceVert.pos.x = cos(outerAngle) * (outerRadius + innerRadius);
+		extraSliceVert.pos.y = sin(outerAngle) * (outerRadius +  innerRadius);
+		extraSliceVert.pos.z = 0.f;
+		extraSliceVert.normal = ew::Normalize(extraSliceVert.pos - sliceCenterPos);
+		extraSliceVert.uv = ew::Vec2(stack / float(outerSegments), 1);
+
+		result.vertices.push_back(extraSliceVert);
+	}
+
+	//Extra slice for UV seam
+	for (int slice = 0; slice < innerSegments; slice++)
+	{
+		float innerAngle = slice * innerAngleStep;
+		ew::Vertex extraSliceVert;
+		extraSliceVert.pos.x = (outerRadius + cos(innerAngle) * innerRadius);
+		extraSliceVert.pos.y = 0;
+		extraSliceVert.pos.z = sin(innerAngle) * innerRadius;
+		extraSliceVert.normal = ew::Normalize(extraSliceVert.pos - ew::Vec3(outerRadius, 0.f, 0.f));
+		extraSliceVert.uv = ew::Vec2(1, slice / float(innerSegments));
+		result.vertices.push_back(extraSliceVert);
+	}
+	ew::Vertex sliceEndVert;
+	sliceEndVert.pos.x = (outerRadius + innerRadius);
+	sliceEndVert.pos.y = 0.f;
+	sliceEndVert.pos.z = 0.f;
+	sliceEndVert.normal = ew::Vec3(1.f, 0.f, 0.f);
+	sliceEndVert.uv = ew::Vec2(1, 1);
+	result.vertices.push_back(sliceEndVert);
+
+	//Generate indicies
+	for (int stack = 0; stack < outerSegments; stack++)
+	{
+		for (int slice = 0; slice <= innerSegments; slice++)
+		{
+			int innerStart = stack * (innerSegments + 1);
+
+			result.indices.push_back(innerStart + slice);
+			result.indices.push_back(innerStart + innerSegments + 1	+ slice);
+			result.indices.push_back(innerStart + slice + 1);
+
+			result.indices.push_back(innerStart + innerSegments + 1 + slice);
+			result.indices.push_back(innerStart + innerSegments + 1 + slice + 1);
+			result.indices.push_back(innerStart + slice + 1);
 		}
 	}
 

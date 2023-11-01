@@ -107,14 +107,14 @@ int main() {
 	sphereTransform.position = ew::Vec3(3.f, 0.f, 0.f);
 
 	//Torus
-	float torusInnerRadius = 0.3f;
-	float torusOuterRadius = 2.f;
-	int torusInnerSegments = 15;
-	int torusOuterSegments = 15;
+	float torusInnerRadius = 0.5f;
+	float torusOuterRadius = 1.f;
+	int torusInnerSegments = 16;
+	int torusOuterSegments = 16;
 	ew::MeshData torusMeshData = Util::createTorus(torusInnerRadius, torusOuterRadius, torusInnerSegments, torusOuterSegments);
 	ew::Mesh torusMesh(torusMeshData);
 	ew::Transform torusTransform;
-	torusTransform.position = ew::Vec3(8.f, 0.f, 0.f);
+	torusTransform.position = ew::Vec3(6.f, 0.f, 0.f);
 
 	//Create cube
 	ew::MeshData cubeMeshData = ew::createCube(0.5f);
