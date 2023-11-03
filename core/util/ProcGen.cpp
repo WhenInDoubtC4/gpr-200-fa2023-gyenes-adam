@@ -15,7 +15,7 @@ ew::MeshData Util::createPlane(float width, float height, int subdivisions)
 			currentVert.pos.y = height * row / float(subdivisions);
 
 			//Generate normals
-			currentVert.normal = ew::Vec3(0.f, 0.f, -1.f);
+			currentVert.normal = ew::Vec3(0.f, 0.f, 1.f);
 
 			//Generate UVs
 			currentVert.uv = ew::Vec2(width * (float(col) / subdivisions), height * (float(row) / subdivisions));

@@ -39,6 +39,20 @@ struct AppSettings {
 	ew::Vec3 lightRotation = ew::Vec3(0, 0, 0);
 }appSettings;
 
+inline void ImGuiTransformGroup(ew::Transform& transform)
+{
+	ImGui::PushID(&transform);
+	ImGui::Indent();
+	if (ImGui::CollapsingHeader("Transform"))
+	{
+		ImGui::DragFloat3("Position", &transform.position.x, 0.05f);
+		ImGui::DragFloat3("Rotation", &transform.rotation.x, 2.f, -180.f, 180.f);
+		ImGui::DragFloat3("Scale", &transform.scale.x, 0.05f);
+	}
+	ImGui::Unindent();
+	ImGui::PopID();
+}
+
 ew::Camera camera;
 ew::CameraController cameraController;
 
@@ -141,8 +155,6 @@ int main() {
 		//Clear both color buffer AND depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		
-
 		shader.use();
 		glBindTexture(GL_TEXTURE_2D, brickTexture);
 		shader.setInt("_Texture", 0);
@@ -222,6 +234,7 @@ int main() {
 				ImGui::DragFloat("Plane width", &planeWidth, 0.05f, 0.05f, 10.f);
 				ImGui::DragFloat("Plane height", &planeHeight, 0.05f, 0.05f, 10.f);
 				ImGui::SliderInt("Plane subdivisions", &planeSubdivisions, 1, 20);
+				ImGuiTransformGroup(planeTransform);
 				
 				planeMeshData = Util::createPlane(planeWidth, planeHeight, planeSubdivisions);
 				planeMesh = ew::Mesh(planeMeshData);
@@ -231,14 +244,17 @@ int main() {
 				ImGui::DragFloat("Cylinder height", &cylinderHeight, 0.05f, 0.2f, 10.f);
 				ImGui::DragFloat("Cylinder radius", &cylinderRadius, 0.05f, 0.1f, 5.f);
 				ImGui::SliderInt("Cuylinder segments", &cylinderSegments, 1, 20);
+				ImGuiTransformGroup(cylinderTransform);
 
 				cylinderMeshData = Util::createCylidner(cylinderHeight, cylinderRadius, cylinderSegments);
-				cylinderMesh = ew::Mesh(cylinderMeshData);
+				cylinderMesh = ew::Mesh(cylinderMeshData);;
+
 			}
 			if (ImGui::CollapsingHeader("Sphere"))
 			{
 				ImGui::DragFloat("Sphere radius", &sphereRadius, 0.05f, 0.05f, 10.f);
 				ImGui::SliderInt("Sphere segments", &sphereSegments, 3, 64);
+				ImGuiTransformGroup(sphereTransform);
 
 				sphereMeshData = Util::createSphere(sphereRadius, sphereSegments);
 				sphereMesh = ew::Mesh(sphereMeshData);
@@ -249,6 +265,7 @@ int main() {
 				ImGui::DragFloat("Torus outer radius", &torusOuterRadius, 0.05f, 0.05f, 10.f);
 				ImGui::SliderInt("Torus inner segments", &torusInnerSegments, 3, 64);
 				ImGui::SliderInt("Torus outer segments", &torusOuterSegments, 3, 64);
+				ImGuiTransformGroup(torusTransform);
 
 				torusMeshData = Util::createTorus(torusInnerRadius, torusOuterRadius, torusInnerSegments, torusOuterSegments);
 				torusMesh = ew::Mesh(torusMeshData);
