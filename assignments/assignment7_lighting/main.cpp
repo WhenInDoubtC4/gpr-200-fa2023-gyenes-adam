@@ -21,6 +21,22 @@ void resetCamera(ew::Camera& camera, ew::CameraController& cameraController);
 int SCREEN_WIDTH = 1080;
 int SCREEN_HEIGHT = 720;
 
+struct Light
+{
+	ew::Vec3 positon;
+	ew::Vec3 color = ew::Vec3(1.f);
+};
+
+void renderLight(const Light& light, ew::Shader& emissiveShader, const ew::Mesh& lightMesh)
+{
+	ew::Transform lightTransform;
+	lightTransform.position = light.positon;
+
+	emissiveShader.setMat4("_Model", lightTransform.getModelMatrix());
+	emissiveShader.setVec3("_lightColor", light.color);
+	lightMesh.draw();
+}
+
 float prevTime;
 ew::Vec3 bgColor = ew::Vec3(0.1f);
 
@@ -61,6 +77,8 @@ int main() {
 	ew::Shader shader("assets/defaultLit.vert", "assets/defaultLit.frag");
 	unsigned int brickTexture = ew::loadTexture("assets/brick_color.jpg",GL_REPEAT,GL_LINEAR);
 
+	ew::Shader emissiveShader("assets/emissive.vert", "assets/emissive.frag");
+
 	//Create cube
 	ew::Mesh cubeMesh(ew::createCube(1.0f));
 	ew::Mesh planeMesh(ew::createPlane(5.0f, 5.0f, 10));
@@ -75,6 +93,13 @@ int main() {
 	planeTransform.position = ew::Vec3(0, -1.0, 0);
 	sphereTransform.position = ew::Vec3(-1.5f, 0.0f, 0.0f);
 	cylinderTransform.position = ew::Vec3(1.5f, 0.0f, 0.0f);
+
+	//Light mesh (reused)
+	ew::Mesh lightMesh(ew::createSphere(0.3f, 12));
+
+	//TODO: Remove, testing only
+	Light defaultLight;
+	defaultLight.positon = ew::Vec3(3.f, 3.f, 3.f);
 
 	resetCamera(camera,cameraController);
 
@@ -97,6 +122,11 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, brickTexture);
 		shader.setInt("_Texture", 0);
 		shader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+		shader.setVec3("_cameraPosition", camera.position);
+
+		//Change light uniforms
+		shader.setVec3("_lights.position", defaultLight.positon);
+		shader.setVec3("_lights.color", defaultLight.color);
 
 		//Draw shapes
 		shader.setMat4("_Model", cubeTransform.getModelMatrix());
@@ -111,8 +141,13 @@ int main() {
 		shader.setMat4("_Model", cylinderTransform.getModelMatrix());
 		cylinderMesh.draw();
 
-		//TODO: Render point lights
-
+		//Render point lights
+		//Setup emissive shader
+		emissiveShader.use();
+		emissiveShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
+		//Render all lights
+		renderLight(defaultLight, emissiveShader, lightMesh);
+		
 		//Render UI
 		{
 			ImGui_ImplGlfw_NewFrame();
@@ -137,6 +172,13 @@ int main() {
 				if (ImGui::Button("Reset")) {
 					resetCamera(camera, cameraController);
 				}
+			}
+			if (ImGui::CollapsingHeader("Lights"))
+			{
+				ImGui::DragFloat3("Position", &defaultLight.positon.x, 0.05f);
+				ImGui::ColorEdit3("Color", &defaultLight.color.x);
+
+				renderLight(defaultLight, emissiveShader, lightMesh);
 			}
 
 			ImGui::ColorEdit3("BG color", &bgColor.x);
