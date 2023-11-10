@@ -15,11 +15,19 @@
 #include <ew/camera.h>
 #include <ew/cameraController.h>
 
+#define _USE_MATH_DEFINES
+
+#include <math.h>
+#include <string>
+#include <sstream>
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void resetCamera(ew::Camera& camera, ew::CameraController& cameraController);
 
 int SCREEN_WIDTH = 1080;
 int SCREEN_HEIGHT = 720;
+
+constexpr int MAX_LIGHTS = 4;
 
 struct Light
 {
@@ -97,9 +105,24 @@ int main() {
 	//Light mesh (reused)
 	ew::Mesh lightMesh(ew::createSphere(0.3f, 12));
 
-	//TODO: Remove, testing only
-	Light defaultLight;
-	defaultLight.positon = ew::Vec3(3.f, 3.f, 3.f);
+	float lightOrbitRadius = 3.f;
+	float lightOrbitSpeed = 1.f;
+	float lightHeight = 3.f;
+	float lightAngleDiff = 2.f * M_PI / MAX_LIGHTS;
+	Light lights[MAX_LIGHTS] = 
+	{
+		Light{ew::Vec3(0.f, lightHeight, lightOrbitRadius), ew::Vec3(1.f, 0.f, 0.f)},
+		Light{ew::Vec3(lightOrbitRadius, lightHeight, 0.f), ew::Vec3(0.f, 1.f, 0.f)},
+		Light{ew::Vec3(0.f, lightHeight, -lightOrbitRadius), ew::Vec3(0.f, 0.f, 1.f)},
+		Light{ew::Vec3(-lightOrbitRadius, lightHeight, 0.f), ew::Vec3(1.f, 1.f, 0)}
+	};
+
+	//Material properties
+	float ambientK = 0.2f;
+	ew::Vec3 ambientColor = ew::Vec3(0.341f, 0.365f, 0.51f);
+	float diffuseK = 0.4f;
+	float specularK = 0.5f;
+	float shininess = 10.f;
 
 	resetCamera(camera,cameraController);
 
@@ -114,6 +137,12 @@ int main() {
 		camera.aspectRatio = (float)SCREEN_WIDTH / SCREEN_HEIGHT;
 		cameraController.Move(window, &camera, deltaTime);
 
+		//Animate lights
+		for (int i = 0; i < MAX_LIGHTS; i++)
+		{
+			lights[i].positon = ew::Vec3(lightOrbitRadius * cos(time * lightOrbitSpeed + i * lightAngleDiff), lightHeight, lightOrbitRadius *  sin(time * lightOrbitSpeed + i * lightAngleDiff));
+		}
+
 		//RENDER
 		glClearColor(bgColor.x, bgColor.y,bgColor.z,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -125,8 +154,16 @@ int main() {
 		shader.setVec3("_cameraPosition", camera.position);
 
 		//Change light uniforms
-		shader.setVec3("_lights.position", defaultLight.positon);
-		shader.setVec3("_lights.color", defaultLight.color);
+		for (int i = 0; i < MAX_LIGHTS; i++)
+		{
+			std::stringstream lightPositionStream;
+			lightPositionStream << "_lights[" << i << "].position";
+			std::stringstream lightColorStream;
+			lightColorStream << "_lights[" << i << "].color";
+
+			shader.setVec3(lightPositionStream.str(), lights[i].positon);
+			shader.setVec3(lightColorStream.str(), lights[i].color);
+		}
 
 		//Draw shapes
 		shader.setMat4("_Model", cubeTransform.getModelMatrix());
@@ -141,12 +178,22 @@ int main() {
 		shader.setMat4("_Model", cylinderTransform.getModelMatrix());
 		cylinderMesh.draw();
 
+		//Set material/light props
+		shader.setFloat("_material.ambientK", ambientK);
+		shader.setVec3("_ambientColor", ambientColor);
+		shader.setFloat("_material.diffuseK", diffuseK);
+		shader.setFloat("_material.specularK", specularK);
+		shader.setFloat("_material.shininess", shininess);
+
 		//Render point lights
 		//Setup emissive shader
 		emissiveShader.use();
 		emissiveShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 		//Render all lights
-		renderLight(defaultLight, emissiveShader, lightMesh);
+		for (int i = 0; i < MAX_LIGHTS; i++)
+		{
+			renderLight(lights[i], emissiveShader, lightMesh);
+		}
 		
 		//Render UI
 		{
@@ -173,12 +220,33 @@ int main() {
 					resetCamera(camera, cameraController);
 				}
 			}
+			if (ImGui::CollapsingHeader("Material"))
+			{
+				ImGui::SliderFloat("Ambient light intensity", &ambientK, 0.f, 1.f);
+				ImGui::ColorEdit3("Ambient light color", &ambientColor.x, ImGuiColorEditFlags_Float);
+				ImGui::SliderFloat("Diffuse intensity", &diffuseK, 0.f, 1.f);
+				ImGui::SliderFloat("Specular intenisty", &specularK, 0.f, 1.f);
+				ImGui::DragFloat("Shininess", &shininess, 0.05f, 0.f);
+			}
 			if (ImGui::CollapsingHeader("Lights"))
 			{
-				ImGui::DragFloat3("Position", &defaultLight.positon.x, 0.05f);
-				ImGui::ColorEdit3("Color", &defaultLight.color.x);
+				ImGui::Indent();
 
-				renderLight(defaultLight, emissiveShader, lightMesh);
+				ImGui::DragFloat("Light orbit radius", &lightOrbitRadius, 0.05f, 0.05f);
+				ImGui::DragFloat("Light orbit speed", &lightOrbitSpeed, 0.05f, 0.05f);
+				ImGui::DragFloat("Light height", &lightHeight, 0.05f);
+
+				for (int i = 0; i < MAX_LIGHTS; i++)
+				{
+					ImGui::PushID(&lights[i]);
+					if (ImGui::CollapsingHeader("Light"))
+					{
+						ImGui::ColorEdit3("Color", &lights[i].color.x, ImGuiColorEditFlags_Float);
+					}
+					ImGui::PopID();
+				}
+				
+				ImGui::Unindent();
 			}
 
 			ImGui::ColorEdit3("BG color", &bgColor.x);
