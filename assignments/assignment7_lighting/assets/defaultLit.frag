@@ -27,6 +27,7 @@ uniform vec3 _cameraPosition;
 uniform sampler2D _Texture;
 uniform Material _material;
 uniform vec3 _ambientColor;
+uniform int _activeLights;
 uniform Light _lights[MAX_LIGHTS];
 
 out vec4 FragColor;
@@ -38,7 +39,7 @@ void main()
 	vec3 ambient = _ambientColor * _material.ambientK;
 	vec3 light = ambient;
 
-	for (int i = 0; i < MAX_LIGHTS; i++)
+	for (int i = 0; i < _activeLights; i++)
 	{
 		vec3 lightDirection = normalize(_lights[i].position - fs_in.position); //omega
 		//vec3 reflected = reflect(-lightDirection, normalize(fs_in.normal)); //r

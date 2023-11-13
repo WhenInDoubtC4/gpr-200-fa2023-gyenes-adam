@@ -104,11 +104,12 @@ int main() {
 
 	//Light mesh (reused)
 	ew::Mesh lightMesh(ew::createSphere(0.3f, 12));
-
+	
+	bool animateLights = true;
+	int activeLights = MAX_LIGHTS;
 	float lightOrbitRadius = 3.f;
 	float lightOrbitSpeed = 1.f;
 	float lightHeight = 3.f;
-	float lightAngleDiff = 2.f * M_PI / MAX_LIGHTS;
 	Light lights[MAX_LIGHTS] = 
 	{
 		Light{ew::Vec3(0.f, lightHeight, lightOrbitRadius), ew::Vec3(1.f, 0.f, 0.f)},
@@ -138,9 +139,13 @@ int main() {
 		cameraController.Move(window, &camera, deltaTime);
 
 		//Animate lights
-		for (int i = 0; i < MAX_LIGHTS; i++)
+		if (animateLights)
 		{
-			lights[i].positon = ew::Vec3(lightOrbitRadius * cos(time * lightOrbitSpeed + i * lightAngleDiff), lightHeight, lightOrbitRadius *  sin(time * lightOrbitSpeed + i * lightAngleDiff));
+			float lightAngleDiff = 2.f * M_PI / activeLights;
+			for (int i = 0; i < activeLights; i++)
+			{
+				lights[i].positon = ew::Vec3(lightOrbitRadius * cos(time * lightOrbitSpeed + i * lightAngleDiff), lightHeight, lightOrbitRadius * sin(time * lightOrbitSpeed + i * lightAngleDiff));
+			}
 		}
 
 		//RENDER
@@ -154,7 +159,8 @@ int main() {
 		shader.setVec3("_cameraPosition", camera.position);
 
 		//Change light uniforms
-		for (int i = 0; i < MAX_LIGHTS; i++)
+		shader.setInt("_activeLights", activeLights);
+		for (int i = 0; i < activeLights; i++)
 		{
 			std::stringstream lightPositionStream;
 			lightPositionStream << "_lights[" << i << "].position";
@@ -190,7 +196,7 @@ int main() {
 		emissiveShader.use();
 		emissiveShader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 		//Render all lights
-		for (int i = 0; i < MAX_LIGHTS; i++)
+		for (int i = 0; i < activeLights; i++)
 		{
 			renderLight(lights[i], emissiveShader, lightMesh);
 		}
@@ -232,15 +238,19 @@ int main() {
 			{
 				ImGui::Indent();
 
+				ImGui::SliderInt("Active lights", &activeLights, 1, MAX_LIGHTS);
+
+				ImGui::Checkbox("Animate lights", &animateLights);
 				ImGui::DragFloat("Light orbit radius", &lightOrbitRadius, 0.05f, 0.05f);
 				ImGui::DragFloat("Light orbit speed", &lightOrbitSpeed, 0.05f, 0.05f);
 				ImGui::DragFloat("Light height", &lightHeight, 0.05f);
 
-				for (int i = 0; i < MAX_LIGHTS; i++)
+				for (int i = 0; i < activeLights; i++)
 				{
 					ImGui::PushID(&lights[i]);
 					if (ImGui::CollapsingHeader("Light"))
 					{
+						ImGui::DragFloat3("Position", &lights[i].positon.x, 0.05f);
 						ImGui::ColorEdit3("Color", &lights[i].color.x, ImGuiColorEditFlags_Float);
 					}
 					ImGui::PopID();
