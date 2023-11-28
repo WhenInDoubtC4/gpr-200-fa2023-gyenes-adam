@@ -15,6 +15,8 @@
 #include <ew/camera.h>
 #include <ew/cameraController.h>
 
+#include "util/Mesh.h"
+
 #define _USE_MATH_DEFINES
 
 #include <math.h>
@@ -88,10 +90,11 @@ int main() {
 	ew::Shader emissiveShader("assets/emissive.vert", "assets/emissive.frag");
 
 	//Create cube
-	ew::Mesh cubeMesh(ew::createCube(1.0f));
-	ew::Mesh planeMesh(ew::createPlane(5.0f, 5.0f, 10));
-	ew::Mesh sphereMesh(ew::createSphere(0.5f, 64));
-	ew::Mesh cylinderMesh(ew::createCylinder(0.5f, 1.0f, 32));
+	//Using extended Mesh class
+	Util::Mesh cubeMesh(ew::createCube(1.0f));
+	Util::Mesh planeMesh(ew::createPlane(5.0f, 5.0f, 10));
+	Util::Mesh sphereMesh(ew::createSphere(0.5f, 64));
+	Util::Mesh cylinderMesh(ew::createCylinder(0.5f, 1.0f, 32));
 
 	//Initialize transforms
 	ew::Transform cubeTransform;

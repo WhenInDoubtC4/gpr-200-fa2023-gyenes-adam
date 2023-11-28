@@ -20,6 +20,8 @@ in Surface
 {
 	vec3 position;
 	vec3 normal;
+	vec3 tangent;
+	vec3 bitangent;
 	vec2 UV;
 } fs_in;
 
@@ -57,5 +59,7 @@ void main()
 
 	texColor *= vec4(light, 0.0);
 
-	FragColor = texColor;
+	//FragColor = texColor;
+
+	FragColor = vec4(fs_in.tangent, 0.0);
 }

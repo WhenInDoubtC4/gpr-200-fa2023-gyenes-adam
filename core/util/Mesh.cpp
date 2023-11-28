@@ -1,12 +1,95 @@
 #include "Mesh.h"
 
+constexpr GLuint POSITION_ATTRIBUTE_INDEX = 0;
+constexpr GLuint NORMAL_ATTRIBUTE_INDEX = 1;
+constexpr GLuint TANGENT_ATTRIBUTE_INDEX = 2;
+constexpr GLuint BITANGENT_ATTRIBUTE_INDEX = 3;
+constexpr GLuint UV_ATTRIBUTE_INDEX = 4;
+
 bool operator==(const ew::Vec3& lhs, const ew::Vec3& rhs)
 {
 	return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
 }
 
+Util::Mesh::Mesh(const ew::MeshData& meshData)
+{
+	load(meshData);
+}
+
+void Util::Mesh::load(const ew::MeshData& meshData)
+{
+	if (meshData.vertices.empty()) return;
+
+	//Construct extended vertex data
+	_exVertexData.reserve(meshData.vertices.size());
+	
+	TBArray tbData = calculateTB(meshData);
+	for (size_t i = 0; i < meshData.vertices.size(); i++)
+	{
+		ExVertex newVertex;
+
+		newVertex.pos = meshData.vertices[i].pos;
+		newVertex.normal = meshData.vertices[i].normal;
+		newVertex.uv = meshData.vertices[i].uv;
+
+		if (tbData.size() - 1 < i) continue;
+
+		newVertex.tangent = tbData[i].first;
+		newVertex.bitangent = tbData[i].second;
+
+		_exVertexData.push_back(newVertex);
+	}
+
+	if (!_initialized)
+	{
+		glGenVertexArrays(1, &_vao);
+		glBindVertexArray(_vao);
+
+		glGenBuffers(1, &_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+
+		glGenBuffers(1, &_ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+
+		glVertexAttribPointer(POSITION_ATTRIBUTE_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(ExVertex), reinterpret_cast<void*>(offsetof(ExVertex, pos)));
+		glEnableVertexAttribArray(POSITION_ATTRIBUTE_INDEX);
+
+		glVertexAttribPointer(NORMAL_ATTRIBUTE_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(ExVertex), reinterpret_cast<void*>(offsetof(ExVertex, normal)));
+		glEnableVertexAttribArray(NORMAL_ATTRIBUTE_INDEX);
+
+		glVertexAttribPointer(TANGENT_ATTRIBUTE_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(ExVertex), reinterpret_cast<void*>(offsetof(ExVertex, tangent)));
+		glEnableVertexAttribArray(TANGENT_ATTRIBUTE_INDEX);
+
+		glVertexAttribPointer(BITANGENT_ATTRIBUTE_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof(ExVertex), reinterpret_cast<void*>(offsetof(ExVertex, bitangent)));
+		glEnableVertexAttribArray(BITANGENT_ATTRIBUTE_INDEX);
+
+		glVertexAttribPointer(UV_ATTRIBUTE_INDEX, 2, GL_FLOAT, GL_FALSE, sizeof(ExVertex), reinterpret_cast<void*>(offsetof(ExVertex, uv)));
+		glEnableVertexAttribArray(UV_ATTRIBUTE_INDEX);
+	}
+
+	_initialized = true;
+
+	glBindVertexArray(_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(ExVertex) * _exVertexData.size(), _exVertexData.data(), GL_STATIC_DRAW);
+
+	if (!meshData.indices.empty())
+	{
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * meshData.indices.size(), meshData.indices.data(), GL_STATIC_DRAW);
+	}
+
+	_vertexCount = _exVertexData.size();
+	_indexCount = meshData.indices.size();
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
 //Referencing https://stackoverflow.com/questions/17000255/calculate-tangent-space-in-c
-Util::Mesh::TBArray Util::Mesh::calculateTB(ew::MeshData & completedMeshData)
+Util::Mesh::TBArray Util::Mesh::calculateTB(const ew::MeshData& completedMeshData)
 {
 	Util::Mesh::TBArray result(completedMeshData.vertices.size());
 
@@ -44,4 +127,17 @@ Util::Mesh::TBArray Util::Mesh::calculateTB(ew::MeshData & completedMeshData)
 	}
 
 	return result;
+}
+
+void Util::Mesh::draw(ew::DrawMode drawMode) const
+{
+	glBindVertexArray(_vao);
+	if (drawMode == ew::DrawMode::TRIANGLES)
+	{
+		glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_INT, nullptr);
+	}
+	else
+	{
+		glDrawArrays(GL_POINTS, 0, _vertexCount);
+	}
 }
