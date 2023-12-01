@@ -16,6 +16,7 @@
 #include <ew/cameraController.h>
 
 #include "util/Mesh.h"
+#include "util/Texture.h"
 
 #define _USE_MATH_DEFINES
 
@@ -85,7 +86,8 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	ew::Shader shader("assets/defaultLit.vert", "assets/defaultLit.frag");
-	unsigned int brickTexture = ew::loadTexture("assets/brick_color.jpg",GL_REPEAT,GL_LINEAR);
+	GLuint brickTexture = Util::loadTexture("assets/brick_color.jpg", GL_REPEAT, GL_LINEAR);
+	GLuint heightTexture = Util::loadTexture("assets/Bamboo001B_2K-JPG_Displacement.jpg", GL_REPEAT, GL_LINEAR);
 
 	ew::Shader emissiveShader("assets/emissive.vert", "assets/emissive.frag");
 
@@ -156,8 +158,12 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, brickTexture);
 		shader.setInt("_Texture", 0);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, heightTexture);
+		shader.setInt("_heightTexture", 1);
 		shader.setMat4("_ViewProjection", camera.ProjectionMatrix() * camera.ViewMatrix());
 		shader.setVec3("_cameraPosition", camera.position);
 

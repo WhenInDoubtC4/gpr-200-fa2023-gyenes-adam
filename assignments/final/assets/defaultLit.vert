@@ -12,6 +12,7 @@ out Surface
 	vec3 tangent;
 	vec3 bitangent;
 	vec2 UV;
+	mat3 tbn;
 } vs_out;
 
 uniform mat4 _Model;
@@ -19,11 +20,17 @@ uniform mat4 _ViewProjection;
 
 void main()
 {
+	vec3 t = normalize(mat3(_Model) * vTangent);
+	vec3 b = normalize(mat3(_Model) * vBitangent);
+	vec3 n = normalize(mat3(_Model) * vNormal);
+	mat3 tbn = transpose(mat3(t, b, n));
+
 	vs_out.position = mat3(_Model) * vPos;
-	vs_out.normal = mat3(_Model) * vNormal;
-	vs_out.tangent = mat3(_Model) * vTangent;
-	vs_out.bitangent = mat3(_Model) * vBitangent;
+	vs_out.normal = n;
+	vs_out.tangent = t;
+	vs_out.bitangent = b;
 	vs_out.UV = vUV;
+	vs_out.tbn = tbn;
 
 	gl_Position = _ViewProjection * _Model * vec4(vPos,1.0);
 }
