@@ -130,6 +130,13 @@ int main() {
 	float specularK = 0.5f;
 	float shininess = 10.f;
 
+	//Parallax mapping settings
+	int parallaxMethod = 0;
+	bool discardOutOfBoundFrags = true;
+	float heightScale = 0.1f;
+	int minLayers = 8;
+	int maxLayers = 32;
+
 	resetCamera(camera,cameraController);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -200,6 +207,13 @@ int main() {
 		shader.setFloat("_material.specularK", specularK);
 		shader.setFloat("_material.shininess", shininess);
 
+		//Set parallax mapping props
+		shader.setInt("_parallaxMethod", parallaxMethod);
+		shader.setInt("_discardOutOfBoundFrags", int(discardOutOfBoundFrags));
+		shader.setFloat("_heightScale", heightScale);
+		shader.setFloat("_minLayers", float(minLayers));
+		shader.setFloat("_maxLayers", float(maxLayers));
+
 		//Render point lights
 		//Setup emissive shader
 		emissiveShader.use();
@@ -266,6 +280,15 @@ int main() {
 				}
 				
 				ImGui::Unindent();
+			}
+			if (ImGui::CollapsingHeader("Parallax mapping"))
+			{
+				const char* parallaxMethodItems[] = { "Off", "Simple", "Steep", "Occlusion" };
+				ImGui::Combo("Method", &parallaxMethod, parallaxMethodItems, 4);
+				ImGui::Checkbox("Discard out of bound frags", &discardOutOfBoundFrags);
+				ImGui::DragFloat("Height scale", &heightScale, 0.01f, 0.f);
+				ImGui::DragInt("Min layers", &minLayers, 1.f, 1, 9999);
+				ImGui::DragInt("Max layers", &maxLayers, 1.f, 2, 9999);
 			}
 
 			ImGui::ColorEdit3("BG color", &bgColor.x);

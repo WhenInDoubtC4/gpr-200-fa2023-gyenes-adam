@@ -34,75 +34,74 @@ uniform vec3 _ambientColor;
 uniform int _activeLights;
 uniform Light _lights[MAX_LIGHTS];
 
-const float height_scale = 0.1;
-	
-const float minLayers = 8.0;
-const float maxLayers = 32.0;
+uniform int _parallaxMethod;
+uniform int _discardOutOfBoundFrags;
+uniform float _heightScale;
+uniform float _minLayers;
+uniform float _maxLayers;
 
 out vec4 FragColor;
 
 //https://learnopengl.com/Advanced-Lighting/Parallax-Mapping
-
-vec2 BasicParallaxMapping(vec2 texCoords, vec3 viewDir)
+vec2 SimpleParallaxMapping(vec2 UV, vec3 viewDir)
 {
-	float height = texture(_heightTexture, texCoords).r;
-	vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
+	float height = texture(_heightTexture, UV).r;
 
-	return texCoords - p;
+	vec2 p = viewDir.xy / viewDir.z * (height * _heightScale);
+	return UV - p;
 }
 
-vec2 SteepParallaxMapping(vec2 texCoords, vec3 viewDir)
+vec2 SteepParallaxMapping(vec2 UV, vec3 viewDir)
 {
-	float numLayers = mix(maxLayers, minLayers, max(dot(vec3(0.0, 0.0, 1.0), viewDir), 0.0));
+	float numLayers = mix(_maxLayers, _minLayers, max(dot(vec3(0.0, 0.0, 1.0), viewDir), 0.0));
 	
 	float layerDepth = 1.0 / numLayers;
 	float currentLayerDepth = 0.0;
 
-	//vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
-	vec2 p = viewDir.xy * height_scale;
+	vec2 p = viewDir.xy * _heightScale;
 	vec2 deltaTexCoords = p / numLayers;
-	vec2 currentTexCoords = texCoords;
-	float height = texture(_heightTexture, currentTexCoords).r;
+	vec2 currentUV = UV;
+	float height = texture(_heightTexture, currentUV).r;
 	while (currentLayerDepth < height)
 	{
-		currentTexCoords -= deltaTexCoords;
-		height = texture(_heightTexture, currentTexCoords).r;
+		currentUV -= deltaTexCoords;
+		height = texture(_heightTexture, currentUV).r;
 		currentLayerDepth += layerDepth;
 	}
 
-	return currentTexCoords;
+	return currentUV;
 }
 
-vec2 ParallaxOcclusionMapping(vec2 texCoords, vec3 viewDir)
+vec2 ParallaxOcclusionMapping(vec2 UV, vec3 viewDir)
 {
-	float numLayers = mix(maxLayers, minLayers, max(dot(vec3(0.0, 0.0, 1.0), viewDir), 0.0));
+	float numLayers = mix(_maxLayers, _minLayers, max(dot(vec3(0.0, 0.0, 1.0), viewDir), 0.0));
 	
 	float layerDepth = 1.0 / numLayers;
 	float currentLayerDepth = 0.0;
 
-	//vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
-	vec2 p = viewDir.xy * height_scale;
-	vec2 deltaTexCoords = p / numLayers;
-	vec2 currentTexCoords = texCoords;
-	float height = texture(_heightTexture, currentTexCoords).r;
+	//vec2 p = viewDir.xy / viewDir.z * (height * _heightScale);
+	vec2 p = viewDir.xy * _heightScale;
+	vec2 deltaUV = p / numLayers;
+	vec2 currentUV = UV;
+	float height = texture(_heightTexture, currentUV).r;
 	while (currentLayerDepth < height)
 	{
-		currentTexCoords -= deltaTexCoords;
-		height = texture(_heightTexture, currentTexCoords).r;
+		currentUV -= deltaUV;
+		height = texture(_heightTexture, currentUV).r;
 		currentLayerDepth += layerDepth;
 	}
 
 	//Copy of steep parallax mapping code above
 
-	vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+	vec2 prevUV = currentUV + deltaUV;
 
 	float afterHeight = height - currentLayerDepth;
-	float beforeHeight = texture(_heightTexture, prevTexCoords).r - currentLayerDepth + layerDepth;
+	float beforeHeight = texture(_heightTexture, prevUV).r - currentLayerDepth + layerDepth;
 
 	float weight = afterHeight / (afterHeight - beforeHeight);
-	vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+	vec2 finalUV = prevUV * weight + currentUV * (1.0 - weight);
 
-	return finalTexCoords;
+	return finalUV;
 }
 
 void main()
@@ -112,13 +111,22 @@ void main()
 	vec3 ambient = _ambientColor * _material.ambientK;
 	vec3 light = ambient;
 
-	vec3 tangentLightPos = fs_in.tbn * _lights[0].position;
+	//vec3 tangentLightPos = fs_in.tbn * _lights[0].position;
 	vec3 tangentViewPos = fs_in.tbn * _cameraPosition;
 	vec3 tangentFragPos = fs_in.tbn * fs_in.position;
 	vec3 viewDir = normalize(tangentViewPos - tangentFragPos);
-	vec2 texCoords = ParallaxOcclusionMapping(fs_in.UV, viewDir);
-	if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) discard;
 
+	//Parallax method
+	vec2 finalUV;
+	if (_parallaxMethod == 0) finalUV = fs_in.UV;
+	else if (_parallaxMethod == 1) finalUV = SimpleParallaxMapping(fs_in.UV, viewDir);
+	else if (_parallaxMethod == 2) finalUV = SteepParallaxMapping(fs_in.UV, viewDir);
+	else finalUV = ParallaxOcclusionMapping(fs_in.UV, viewDir);
+
+	//Discard out of bound frags
+	if(_discardOutOfBoundFrags == 1 && (finalUV.x > 1.0 || finalUV.y > 1.0 || finalUV.x < 0.0 || finalUV.y < 0.0)) discard;
+
+	//Lighting
 	for (int i = 0; i < _activeLights; i++)
 	{
 		vec3 lightDirection = normalize(_lights[i].position - fs_in.position); //omega
@@ -133,13 +141,10 @@ void main()
 		light += specular;
 	}
 
-	vec4 texColor = texture(_Texture, fs_in.UV);
-
-	float displ = texture(_heightTexture, texCoords).r;
-
+	vec4 texColor = texture(_heightTexture, finalUV);
 	texColor *= vec4(light, 0.0);
 
-	//FragColor = texColor;
+	FragColor = texColor;
 
-	FragColor = vec4(displ, 0.0, 0.0, 0.0);
+	//FragColor = vec4(fs_in.tangent, 0.0);
 }

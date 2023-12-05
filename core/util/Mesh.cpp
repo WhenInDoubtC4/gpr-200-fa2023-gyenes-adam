@@ -89,6 +89,7 @@ void Util::Mesh::load(const ew::MeshData& meshData)
 }
 
 //Referencing https://stackoverflow.com/questions/17000255/calculate-tangent-space-in-c
+//and https://gamedev.stackexchange.com/questions/68612/how-to-compute-tangent-and-bitangent-vectors
 Util::Mesh::TBArray Util::Mesh::calculateTB(const ew::MeshData& completedMeshData)
 {
 	Util::Mesh::TBArray result(completedMeshData.vertices.size());
@@ -110,20 +111,48 @@ Util::Mesh::TBArray Util::Mesh::calculateTB(const ew::MeshData& completedMeshDat
 
 		ew::Vec3 normal = completedMeshData.vertices[i0].normal;
 
-		ew::Vec3 deltaPos = pos0 == pos1 ? pos2 - pos0 : pos1 - pos0;
+		//ew::Vec3 deltaPos = pos0 == pos1 ? pos2 - pos0 : pos1 - pos0;
+
+		ew::Vec3 deltaPos1 = pos1 - pos0;
+		ew::Vec3 deltaPos2 = pos2 - pos0;
 
 		ew::Vec2 deltaUV1 = uv1 - uv0;
 		ew::Vec2 deltaUV2 = uv2 - uv1;
 
-		//Avoid division by 0
-		ew::Vec3 tangent = ew::Magnitude(deltaUV1) == 0.f ? deltaPos : deltaPos / ew::Magnitude(deltaUV1);
-		tangent = ew::Normalize(tangent - ew::Dot(normal, tangent) * normal);
+		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+		ew::Vec3 xDir(
+			(deltaUV2.y * deltaPos1.x - deltaUV1.y * deltaPos2.x) * r,
+			(deltaUV2.y * deltaPos1.y - deltaUV1.y * deltaPos2.y) * r,
+			(deltaUV2.y * deltaPos1.z - deltaUV1.y * deltaPos2.z) * r);
+		ew::Vec3 yDir(
+			(deltaUV1.x * deltaPos2.x - deltaUV2.x * deltaPos1.x) * r,
+			(deltaUV1.x * deltaPos2.y - deltaUV2.x * deltaPos1.y) * r,
+			(deltaUV1.x * deltaPos2.z - deltaUV2.x * deltaPos1.z) * r);
 
+		result[i0] = std::make_pair(-xDir, -xDir);
+		result[i1] = std::make_pair(-xDir, -xDir);
+		result[i2] = std::make_pair(-xDir, -xDir);
+
+		//Avoid division by 0
+		//ew::Vec3 tangent = ew::Magnitude(deltaUV1) == 0.f ? deltaPos : deltaPos / ew::Magnitude(deltaUV1);
+		//tangent = ew::Normalize(tangent - ew::Dot(normal, tangent) * normal);
+
+		//ew::Vec3 bitangent = ew::Normalize(ew::Cross(normal, tangent));
+
+		//result[i0] = std::make_pair(tangent, bitangent);
+		//result[i1] = result[i0];
+		//result[i2] = result[i0];
+	}
+
+	for (size_t i = 0; i < completedMeshData.vertices.size(); i++)
+	{
+		ew::Vec3 oldTangent = result[i].first;
+		ew::Vec3 normal = completedMeshData.vertices[i].normal;
+
+		ew::Vec3 tangent = ew::Normalize(oldTangent - normal * ew::Dot(normal, oldTangent));
 		ew::Vec3 bitangent = ew::Normalize(ew::Cross(normal, tangent));
 
-		result[i0] = std::make_pair(tangent, bitangent);
-		result[i1] = result[i0];
-		result[i2] = result[i0];
+		result[i] = std::make_pair(tangent, bitangent);
 	}
 
 	return result;

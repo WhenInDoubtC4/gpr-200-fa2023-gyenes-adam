@@ -258,6 +258,12 @@ int main() {
 				
 				ImGui::Unindent();
 			}
+			if (ImGui::CollapsingHeader("Parallax mapping"))
+			{
+				const char* comboItems[] = {"Simple", "Steep", "Occlusion"};
+				static int currentItem = 0;
+				ImGui::Combo("Method", &currentItem, comboItems, 3);
+			}
 
 			ImGui::ColorEdit3("BG color", &bgColor.x);
 			ImGui::End();
