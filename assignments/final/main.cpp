@@ -1,3 +1,8 @@
+/*
+* Modified by Adam Gyenes
+* Fork of assignment7
+*/
+
 #include <stdio.h>
 #include <math.h>
 
@@ -86,8 +91,8 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 
 	ew::Shader shader("assets/defaultLit.vert", "assets/defaultLit.frag");
-	GLuint brickTexture = Util::loadTexture("assets/brick_color.jpg", GL_REPEAT, GL_LINEAR);
-	GLuint heightTexture = Util::loadTexture("assets/Bamboo001B_2K-JPG_Displacement.jpg", GL_REPEAT, GL_LINEAR);
+	GLuint colorTexture = Util::loadTexture("assets/rock_color.jpg", GL_REPEAT, GL_LINEAR);
+	GLuint heightTexture = Util::loadTexture("assets/rock_height.jpg", GL_REPEAT, GL_LINEAR);
 
 	ew::Shader emissiveShader("assets/emissive.vert", "assets/emissive.frag");
 
@@ -136,6 +141,8 @@ int main() {
 	float heightScale = 0.1f;
 	int minLayers = 8;
 	int maxLayers = 32;
+	int prevTextureUsed = 0;
+	int textureUsed = 0;
 
 	resetCamera(camera,cameraController);
 
@@ -166,8 +173,8 @@ int main() {
 
 		shader.use();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, brickTexture);
-		shader.setInt("_Texture", 0);
+		glBindTexture(GL_TEXTURE_2D, colorTexture);
+		shader.setInt("_colorTexture", 0);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, heightTexture);
 		shader.setInt("_heightTexture", 1);
@@ -289,6 +296,23 @@ int main() {
 				ImGui::DragFloat("Height scale", &heightScale, 0.01f, 0.f);
 				ImGui::DragInt("Min layers", &minLayers, 1.f, 1, 9999);
 				ImGui::DragInt("Max layers", &maxLayers, 1.f, 2, 9999);
+				const char* textureItems[] = { "Rock", "Bamboo" };
+				ImGui::Combo("Texture", &textureUsed, textureItems, 2);
+				if (prevTextureUsed != textureUsed)
+				{
+					if (textureUsed == 0)
+					{
+						colorTexture = Util::loadTexture("assets/rock_color.jpg", GL_REPEAT, GL_LINEAR);
+						heightTexture = Util::loadTexture("assets/rock_height.jpg", GL_REPEAT, GL_LINEAR);
+					}
+					else
+					{
+						colorTexture = Util::loadTexture("assets/bamboo_color.jpg", GL_REPEAT, GL_LINEAR);
+						heightTexture = Util::loadTexture("assets/bamboo_height.jpg", GL_REPEAT, GL_LINEAR);
+					}
+
+					prevTextureUsed = textureUsed;
+				}
 			}
 
 			ImGui::ColorEdit3("BG color", &bgColor.x);

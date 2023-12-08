@@ -1,3 +1,9 @@
+/* 
+* Modified by Adam Gyenes
+* Fork of assignment7
+*/
+
+
 #version 450
 
 #define MAX_LIGHTS 4
@@ -27,7 +33,7 @@ in Surface
 } fs_in;
 
 uniform vec3 _cameraPosition;
-uniform sampler2D _Texture;
+uniform sampler2D _colorTexture;
 uniform sampler2D _heightTexture;
 uniform Material _material;
 uniform vec3 _ambientColor;
@@ -141,7 +147,7 @@ void main()
 		light += specular;
 	}
 
-	vec4 texColor = texture(_heightTexture, finalUV);
+	vec4 texColor = texture(_colorTexture, finalUV);
 	texColor *= vec4(light, 0.0);
 
 	FragColor = texColor;

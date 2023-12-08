@@ -1,3 +1,7 @@
+/*
+* Created by Adam Gyenes
+*/
+
 #include "Mesh.h"
 
 constexpr GLuint POSITION_ATTRIBUTE_INDEX = 0;
@@ -111,8 +115,6 @@ Util::Mesh::TBArray Util::Mesh::calculateTB(const ew::MeshData& completedMeshDat
 
 		ew::Vec3 normal = completedMeshData.vertices[i0].normal;
 
-		//ew::Vec3 deltaPos = pos0 == pos1 ? pos2 - pos0 : pos1 - pos0;
-
 		ew::Vec3 deltaPos1 = pos1 - pos0;
 		ew::Vec3 deltaPos2 = pos2 - pos0;
 
@@ -124,24 +126,10 @@ Util::Mesh::TBArray Util::Mesh::calculateTB(const ew::MeshData& completedMeshDat
 			(deltaUV2.y * deltaPos1.x - deltaUV1.y * deltaPos2.x) * r,
 			(deltaUV2.y * deltaPos1.y - deltaUV1.y * deltaPos2.y) * r,
 			(deltaUV2.y * deltaPos1.z - deltaUV1.y * deltaPos2.z) * r);
-		ew::Vec3 yDir(
-			(deltaUV1.x * deltaPos2.x - deltaUV2.x * deltaPos1.x) * r,
-			(deltaUV1.x * deltaPos2.y - deltaUV2.x * deltaPos1.y) * r,
-			(deltaUV1.x * deltaPos2.z - deltaUV2.x * deltaPos1.z) * r);
 
 		result[i0] = std::make_pair(-xDir, -xDir);
 		result[i1] = std::make_pair(-xDir, -xDir);
 		result[i2] = std::make_pair(-xDir, -xDir);
-
-		//Avoid division by 0
-		//ew::Vec3 tangent = ew::Magnitude(deltaUV1) == 0.f ? deltaPos : deltaPos / ew::Magnitude(deltaUV1);
-		//tangent = ew::Normalize(tangent - ew::Dot(normal, tangent) * normal);
-
-		//ew::Vec3 bitangent = ew::Normalize(ew::Cross(normal, tangent));
-
-		//result[i0] = std::make_pair(tangent, bitangent);
-		//result[i1] = result[i0];
-		//result[i2] = result[i0];
 	}
 
 	for (size_t i = 0; i < completedMeshData.vertices.size(); i++)
